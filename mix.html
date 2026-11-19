@@ -1,0 +1,2840 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>河合塾 ＆ ベネッセ 統合コード検索</title>
+    <style>
+        :root {
+            --primary-color: #7c3aed;
+            --primary-hover: #6d28d9;
+            --bg-color: #f8fafc;
+            --card-bg: #ffffff;
+            --text-color: #1e293b;
+            --border-color: #cbd5e1;
+        }
+        body {
+            font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            margin: 0;
+            padding: 6px;
+            padding-top: 50px;
+        }
+        body.modal-open {
+            overflow: hidden;
+            position: fixed;
+            width: 100%;
+            height: 100%;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        
+        /* 固定ヘッダー */
+        header {
+            position: fixed;
+            top: 0; left: 0; right: 0;
+            height: 44px;
+            background: var(--card-bg);
+            border-bottom: 1px solid var(--border-color);
+            box-shadow: 0 2px 4px rgba(0,0,0,0.06);
+            z-index: 900;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0 10px;
+            box-sizing: border-box;
+        }
+        .header-title-group {
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            min-width: 0;          /* 狭い画面でタイトルを縮められるように */
+            flex: 1 1 auto;
+        }
+        h1 {
+            font-size: 0.9rem;
+            margin: 0;
+            color: var(--primary-color);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;   /* 入り切らなければ「…」で省略 */
+            line-height: 1.1;
+        }
+        .header-sub {
+            font-size: 0.58rem;
+            color: #64748b;
+            font-weight: bold;
+            white-space: nowrap;
+        }
+
+        .cart-button {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            background: #f5f3ff;
+            border: 1px solid #ddd6fe;
+            color: #5b21b6;
+            padding: 4px 8px;
+            border-radius: 20px;
+            cursor: pointer;
+            font-weight: bold;
+            font-size: 0.72rem;
+            transition: all 0.2s;
+            user-select: none;
+            flex-shrink: 0;            /* ボタンは縮めない・折り返さない */
+            white-space: nowrap;
+            margin-left: 8px;
+        }
+        .cart-button:hover {
+            background: #ede9fe;
+            border-color: #c4b5fd;
+        }
+        .cart-badge {
+            background: var(--primary-color);
+            color: #ffffff;
+            font-size: 0.68rem;
+            padding: 1px 6px;
+            border-radius: 10px;
+            font-weight: bold;
+        }
+
+        button {
+            background-color: var(--primary-color);
+            color: white;
+            border: none;
+            padding: 4px 8px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-weight: 600;
+            font-size: 0.72rem;
+            transition: background 0.2s;
+            white-space: nowrap;
+        }
+        button:hover { background-color: var(--primary-hover); }
+        
+        button.danger { background-color: #b91c1c; color: #ffffff; }
+        button.danger:hover { background-color: #991b1b; }
+        button.success { background-color: #16a34a; }
+        button.success:hover { background-color: #15803d; }
+        button.secondary { background-color: #64748b; color: #ffffff; }
+        button.secondary:hover { background-color: #475569; }
+
+        button.sub-delete {
+            background-color: #f1f5f9;
+            color: #64748b;
+            border: 1px solid #cbd5e1;
+            font-weight: normal;
+        }
+        button.sub-delete:hover {
+            background-color: #e2e8f0;
+            color: #334155;
+            border-color: #94a3b8;
+        }
+
+        .order-btn-group {
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+            justify-content: center;
+        }
+        button.order-btn {
+            background-color: #f1f5f9;
+            color: #475569;
+            border: 1px solid #cbd5e1;
+            padding: 1px 5px;
+            font-size: 0.6rem;
+            line-height: 1;
+            border-radius: 3px;
+        }
+        button.order-btn:hover { background-color: #e2e8f0; color: #1e293b; }
+        button.order-btn:disabled { opacity: 0.2; cursor: not-allowed; }
+        
+        /* 検索カード */
+        .search-card {
+            background: var(--card-bg);
+            padding: 6px 8px;
+            border-radius: 8px;
+            box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+            margin-bottom: 6px;
+        }
+        .search-card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            cursor: pointer;
+            user-select: none;
+        }
+        .search-card-title {
+            font-size: 0.78rem;
+            font-weight: bold;
+            color: #334155;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+        
+        .search-body {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+            margin-top: 6px;
+            border-top: 1px dashed #e2e8f0;
+            padding-top: 6px;
+        }
+        .search-body.collapsed { display: none; }
+
+        .search-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 4px 6px;
+            align-items: end;
+        }
+
+        .search-field {
+            display: flex;
+            flex-direction: column;
+            gap: 1px;
+        }
+        .search-field label {
+            color: #475569;
+            font-size: 0.63rem;
+            font-weight: bold;
+            padding-left: 2px;
+            white-space: nowrap;
+        }
+        .search-field input, .search-field select {
+            width: 100%;
+            padding: 3px 6px;
+            border: 1px solid var(--border-color);
+            border-radius: 5px;
+            font-size: 0.75rem;
+            box-sizing: border-box;
+            background: #fff;
+            outline: none;
+            height: 28px;
+        }
+        .search-field input:focus, .search-field select:focus {
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 2px rgba(124, 58, 237, 0.15);
+        }
+
+        .search-info-box {
+            background: #f5f3ff;
+            border: 1px solid #ddd6fe;
+            color: #5b21b6;
+            padding: 4px 8px;
+            border-radius: 6px;
+            font-size: 0.72rem;
+            font-weight: bold;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .highlight-count {
+            color: var(--primary-color);
+            font-size: 0.88rem;
+        }
+        .highlight-count.error { color: #dc2626; }
+
+        /* アコーディオン */
+        .univ-group {
+            background: var(--card-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            margin-bottom: 6px;
+            overflow: hidden;
+            overflow: clip;   /* hidden だと中の見出しが張り付かない（sticky が効かない）ので、clip にする。角丸で切る効果は同じ */
+            box-shadow: 0 1px 2px rgba(0,0,0,0.03);
+        }
+        .univ-header {
+            position: sticky; top: 1px; z-index: 5;   /* 開いた大学の見出し（大学名）を、スクロールしても結果欄の上端に張り付かせる（上に1pxあけて、枠の上の線を出す） */
+            padding: 7px 10px;
+            background: #f8fafc;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            cursor: pointer;
+            font-weight: bold;
+            font-size: 0.82rem;
+            color: #0f172a;
+            user-select: none;
+            transition: background 0.2s;
+        }
+        .univ-header:hover { background: #f1f5f9; }
+        /* 張り付いたとき: ①枠の上の線が画面の外に出てしまうので、見出し自身の上に線（-1pxの影）を引く（張り付いていないときは枠の線と重なって見分けがつかない）
+                          ②下の内容と区別がつくように、下に薄い影 */
+        .univ-group.open > .univ-header { box-shadow: 0 -1px 0 0 var(--border-color), 0 1px 3px rgba(15, 23, 42, 0.12); }
+        .univ-header-left {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .type-badge {
+            font-size: 0.62rem;
+            padding: 1px 5px;
+            border-radius: 4px;
+            font-weight: bold;
+            color: #ffffff;
+            letter-spacing: 0.5px;
+            flex-shrink: 0;
+            display: inline-block;
+            vertical-align: middle;
+            margin-right: 3px;
+        }
+        .type-kokuritsu { background-color: #2563eb; }
+        .type-koritsu   { background-color: #16a34a; }
+        .type-shiritsu  { background-color: #d97706; }
+        .type-other     { background-color: #64748b; }
+
+        .univ-count-badge {
+            background: #e2e8f0;
+            color: #475569;
+            font-size: 0.62rem;
+            padding: 1px 5px;
+            border-radius: 10px;
+            font-weight: normal;
+        }
+        .univ-arrow {
+            font-size: 0.7rem;
+            color: #64748b;
+            transition: transform 0.2s;
+        }
+        .univ-group.open .univ-arrow { transform: rotate(180deg); }
+        
+        .univ-content {
+            display: none;
+            padding: 6px;
+            background: #ffffff;
+            border-top: 1px solid #f1f5f9;
+            flex-direction: column;
+            gap: 6px;
+        }
+        .univ-group.open .univ-content { display: flex; }
+
+        .fac-section {
+            background: #f8fafc;
+            border: 1px solid #e2e8f0;
+            border-radius: 6px;
+            padding: 5px 6px;
+        }
+        .fac-title {
+            font-size: 0.72rem;
+            font-weight: bold;
+            color: #334155;
+            margin-bottom: 3px;
+            padding-bottom: 2px;
+            border-bottom: 1px dashed #cbd5e1;
+        }
+        .fac-cards-wrapper {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+
+        .table-container {
+            background: transparent;
+            margin-bottom: 8px;
+            max-height: 65vh;
+            overflow-y: auto;
+        }
+
+        #status-msg, .guide-msg {
+            text-align: center;
+            padding: 12px;
+            color: #475569;
+            background: var(--card-bg);
+            border-radius: 8px;
+            box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+            font-size: 0.78rem;
+            font-weight: 500;
+        }
+        .guide-msg.error { color: #dc2626; }
+        .guide-msg.small { padding: 8px; font-size: 0.72rem; color: #64748b; }
+
+        .bg-zenki  { background-color: #eff6ff !important; border-color: #bfdbfe !important; }
+        .bg-chuki  { background-color: #fefce8 !important; border-color: #fef08a !important; }
+        .bg-koki   { background-color: #fef2f2 !important; border-color: #fecaca !important; }
+        .bg-dokuji { background-color: #f3e8ff !important; border-color: #d8b4fe !important; }
+
+        .sub-card {
+            background: #ffffff;
+            border: 1px solid var(--border-color);
+            border-radius: 5px;
+            padding: 4px 6px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 6px;
+        }
+        .sub-card-code-area {
+            display: flex;
+            flex-direction: column;
+            align-items: flex-start;
+            justify-content: center;
+            min-width: 145px;
+            padding-right: 6px;
+            border-right: 1px solid rgba(0,0,0,0.08);
+            font-size: 0.7rem;
+            font-family: monospace;
+            gap: 2px;
+        }
+        .code-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            width: 100%;
+        }
+        .code-left { display: flex; align-items: center; gap: 4px; min-width: 0; }
+        .code-tag {                       /* 河合=青 / ベネ=オレンジ の名札 */
+            font-size: 0.58rem;
+            color: #ffffff;
+            font-weight: bold;
+            padding: 0 5px;
+            border-radius: 3px;
+            line-height: 1.5;
+            white-space: nowrap;
+        }
+        .tag-kawai { background: #2563eb; }
+        .tag-bene  { background: #ea580c; }
+        .code-sub { font-size: 0.55rem; color: #64748b; font-weight: bold; white-space: nowrap; }
+        .code-val {
+            font-weight: bold;
+            color: var(--primary-color);
+        }
+        .code-val.val-kawai { color: #1d4ed8; }
+        .code-val.val-bene  { color: #c2410c; }
+        .code-val.code-none {
+            font-weight: normal;
+            color: #cbd5e1;
+            letter-spacing: 1px;
+        }
+        /* 保存・削除ボタン: 横いっぱいではなく、ボタンらしい大きさで右寄せ */
+        button.card-btn {
+            display: block;
+            width: auto;
+            margin: 3px 0 0 auto;
+            padding: 2px 14px;
+            font-size: 0.7rem;
+        }
+
+        /* 保存済み（これ以上保存できない）: グレーで押せない */
+        button.card-btn.saved, button.card-btn.saved:disabled {
+            background: #e2e8f0; color: #64748b; border-color: #cbd5e1; cursor: default; box-shadow: none;
+        }
+
+        .sub-card-content { flex-grow: 1; }
+        
+        .sub-card-main {
+            font-size: 0.72rem;
+            color: #0f172a;
+            margin-bottom: 1px;
+            display: flex;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 2px;
+        }
+        .bold-fac { font-weight: bold; color: #0f172a; }
+        .normal-dept { font-weight: normal; color: #475569; }
+
+        /* 共通テスト利用バッジ（青緑。河合の青・ベネのオレンジ・日程の背景色と重ならない色） */
+        .kyo-badge {
+            display: inline-block;
+            font-size: 0.58rem; font-weight: bold; line-height: 1.5;
+            color: #0f766e; background: #ccfbf1; border: 1px solid #5eead4;
+            border-radius: 3px; padding: 0 4px; font-family: system-ui, sans-serif;
+        }
+        .sub-card-badge {
+            background: rgba(255, 255, 255, 0.75);
+            border: 1px solid rgba(0,0,0,0.08);
+            color: #334155;
+            font-size: 0.58rem;
+            padding: 1px 4px;
+            border-radius: 3px;
+            font-weight: 600;
+        }
+
+        /* 河合・ベネの名前を並べて確認するカード */
+        .pair-card { align-items: stretch; }
+        .pair-main { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 3px; }
+        .pair-univ { font-size: 0.74rem; display: flex; align-items: center; gap: 3px; margin-bottom: 1px; }
+        .src-block { border-left: 3px solid #2563eb; padding: 1px 0 1px 6px; }
+        .src-block.src-bene { border-left-color: #ea580c; }
+        .src-block.src-none { opacity: 0.55; }
+        .src-head { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; font-family: monospace; font-size: 0.7rem; }
+        .src-names { font-size: 0.72rem; color: #0f172a; line-height: 1.4; word-break: break-all; margin-top: 1px; }
+        .src-note { font-size: 0.58rem; color: #64748b; font-family: system-ui, sans-serif; }
+        .src-flag.src-flag.flag-check { color: #991b1b; background: #fee2e2; border-color: #fca5a5; }   /* 要確認（方式名の数字が食い違う）は赤み */
+        .src-flag { cursor: pointer; white-space: nowrap; font-size: 0.58rem; font-weight: bold; color: #92400e; background: #fef3c7; border: 1px solid #fcd34d; border-radius: 3px; padding: 0 4px; font-family: system-ui, sans-serif; }
+        .name-diff { background: #fef3c7; outline: 1px solid #f59e0b; border-radius: 3px; padding: 0 2px; }
+        /* 保存・削除ボタンは左端（カードが横に長くても指が届く） */
+        .pair-side { display: flex; flex-direction: column; justify-content: center; gap: 2px; padding-right: 6px; border-right: 1px solid rgba(0,0,0,0.08); }
+        /* 保存・保存 1/3・保存済・削除 のどれでも同じ幅にそろえる（文字数で幅が変わらないように） */
+        .pair-side button.card-btn { margin: 0; width: 6em; padding: 3px 0; text-align: center; white-space: nowrap; box-sizing: border-box; }
+        .side-note { font-size: 0.54rem; line-height: 1.25; color: #64748b; text-align: center; width: 6em; word-break: keep-all; }   /* 片方だけ保存済みのときの小さな注記（ボタンの幅は変えない） */
+        .part-chip { font-size: 0.56rem; font-weight: bold; color: #4338ca; background: #e0e7ff; border: 1px solid #a5b4fc; border-radius: 3px; padding: 0 4px; white-space: nowrap; font-family: system-ui, sans-serif; }
+        button.flag-opt { display: block; width: 100%; box-sizing: border-box; text-align: left; padding: 8px 10px; margin: 0; font-size: 0.8rem; line-height: 1.35; }
+        button.flag-opt small { display: block; font-weight: normal; font-size: 0.62rem; opacity: 0.85; }
+        .flag-warn { font-size: 0.7rem; color: #7f1d1d; background: #fef2f2; border: 1px solid #fecaca; border-radius: 8px; padding: 5px 8px; line-height: 1.45; }
+        .dl-row { display: flex; justify-content: flex-end; margin: 2px 0 0; }
+        button.dl-open { font-size: 0.64rem; padding: 2px 10px; }
+        #dl-pw { width: 100%; box-sizing: border-box; font-size: 1rem; padding: 8px; border: 1px solid #cbd5e1; border-radius: 8px; }
+        #dl-err { font-size: 0.7rem; color: #b91c1c; min-height: 1em; }
+        .legend { font-size: 0.6rem; color: #64748b; margin-top: 4px; line-height: 1.5; }
+        .legend .name-diff { font-size: 0.6rem; }
+
+        /* 読み替えルールの確認パネル */
+        #rule-panel { display: none; margin: 4px 0; background: #fffbeb; border: 1px solid #fcd34d; border-radius: 8px; font-size: 0.68rem; color: #78350f; }
+        #rule-panel summary { cursor: pointer; padding: 5px 8px; font-weight: bold; user-select: none; }
+        #rule-panel .rule-body { padding: 2px 8px 8px; display: flex; flex-direction: column; gap: 4px; line-height: 1.45; }
+        #rule-panel .rule-item { border-top: 1px dashed #fde68a; padding-top: 3px; word-break: break-all; }
+        #rule-panel code { background: #fef3c7; padding: 0 3px; border-radius: 3px; font-size: 0.66rem; }
+
+        /* モーダル */
+        #clip-modal {
+            display: none;
+            position: fixed;
+            top: 0; left: 0;
+            width: 100vw; height: 100vh;
+            background-color: rgba(0, 0, 0, 0.5);
+            z-index: 1000;
+            justify-content: center;
+            align-items: center;
+            padding: 16px 12px;
+            box-sizing: border-box;
+            backdrop-filter: blur(2px);
+        }
+        #clip-modal.show { display: flex; }
+        
+        .modal-content {
+            background: #ffffff;
+            width: 100%; max-width: 650px;
+            max-height: 80vh;
+            border-radius: 12px;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
+            display: flex; flex-direction: column; overflow: hidden;
+            animation: modalOpen 0.2s ease-out;
+        }
+        @keyframes modalOpen {
+            from { transform: scale(0.95); opacity: 0; }
+            to { transform: scale(1); opacity: 1; }
+        }
+        .modal-header {
+            padding: 10px 12px; background: #f8fafc;
+            border-bottom: 1px solid var(--border-color);
+            display: flex; justify-content: space-between; align-items: center; flex-shrink: 0;
+        }
+        .modal-title { font-weight: bold; font-size: 0.85rem; color: var(--primary-color); }
+        .modal-body { padding: 10px 12px; overflow-y: auto; flex-grow: 1; display: flex; flex-direction: column; gap: 6px; }
+        .modal-footer {
+            padding: 10px 12px; background: #f8fafc;
+            border-top: 1px solid var(--border-color);
+            display: flex; gap: 8px; justify-content: space-between; align-items: center; flex-shrink: 0;
+        }
+
+        #toast {
+            position: fixed; top: 50%; left: 50%;
+            transform: translate(-50%, -50%) scale(0.9);
+            background-color: rgba(15, 23, 42, 0.96) !important;
+            color: #ffffff !important;
+            padding: 20px 24px; border-radius: 14px;
+            font-size: 0.88rem; font-weight: bold;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.4);
+            z-index: 2000; opacity: 0; transition: opacity 0.2s ease, transform 0.2s ease;
+            pointer-events: none; text-align: center; max-width: 85vw;
+            backdrop-filter: blur(6px); border: 1px solid rgba(255, 255, 255, 0.15);
+        }
+        #toast.show { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+
+        .toast-confirm-box {
+            display: flex; flex-direction: column; gap: 14px; align-items: center; pointer-events: auto; min-width: 230px; padding: 2px 0;
+        }
+        .toast-confirm-title { font-size: 0.95rem; font-weight: bold; color: #ffffff; line-height: 1.3; white-space: nowrap; }
+        .toast-btn-group-vertical { display: flex; flex-direction: column; gap: 8px; width: 100%; }
+        .toast-btn-group-vertical button { width: 100%; padding: 9px 0; font-size: 0.85rem; font-weight: bold; box-sizing: border-box; border-radius: 6px; }
+
+        /* ベネを選ぶシート（画面の下から出る） */
+        #pick-modal, #flag-modal, #dl-modal {
+            position: fixed; inset: 0; z-index: 1500;
+            display: none; align-items: flex-end; justify-content: center;
+            background: rgba(15, 23, 42, 0.55);
+        }
+        #pick-modal.show, #flag-modal.show, #dl-modal.show { display: flex; }
+        .pick-sheet {
+            width: 100%; max-width: 560px; max-height: 82vh; overflow-y: auto; box-sizing: border-box;
+            background: #ffffff; border-radius: 16px 16px 0 0;
+            padding: 14px 14px calc(14px + env(safe-area-inset-bottom, 0px));
+            box-shadow: 0 -10px 30px rgba(0, 0, 0, 0.3);
+            display: flex; flex-direction: column; gap: 8px;
+        }
+        .pick-title { font-size: 0.92rem; font-weight: bold; color: #0f172a; }
+        .pick-sub { font-size: 0.66rem; color: #64748b; margin-top: -4px; }
+        .pick-kawai { border: 1px solid #cbd5e1; border-radius: 8px; padding: 4px 6px; background: #f8fafc; }
+        button.pick-opt {
+            display: block; width: 100%; text-align: left; box-sizing: border-box;
+            background: #fff7ed; color: #0f172a; border: 2px solid #fdba74; border-radius: 10px;
+            padding: 6px 8px; margin: 0; font-weight: normal; cursor: pointer;
+        }
+        button.pick-opt:hover, button.pick-opt:active { background: #ffedd5; border-color: #f97316; }
+        button.pick-opt .src-block { margin: 0; pointer-events: none; }
+        button.pick-cancel { width: 100%; padding: 9px 0; font-size: 0.85rem; margin: 2px 0 0; }
+
+        /* コード検索で一致した部分（入力したコードで始まるコード）を黄色く目立たせる */
+        .code-val.code-hit { background: #fef08a; border-radius: 3px; box-shadow: 0 0 0 2px #fef08a; }
+
+        /* 版（更新日時）の表示: 右下に小さく・薄く。タップは素通り（邪魔にならない） */
+        #version-stamp {
+            position: fixed; right: 5px; bottom: calc(2px + env(safe-area-inset-bottom, 0px)); z-index: 900;
+            font-size: 0.52rem; line-height: 1; letter-spacing: 0.02em;
+            color: #94a3b8; opacity: 0.8; text-shadow: 0 0 2px #fff, 0 0 2px #fff;
+            font-variant-numeric: tabular-nums; font-family: system-ui, -apple-system, sans-serif;
+            pointer-events: none; user-select: none; -webkit-user-select: none;
+        }
+
+        /* 読み込み中の画面（黒めの背景。読み込みが終わるとフェードアウトして通常画面に戻る） */
+        #loading-overlay {
+            position: fixed; inset: 0; z-index: 99999;
+            display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 14px;
+            background: #0b0e15; color: #e5e7eb;
+            font-family: system-ui, -apple-system, 'Hiragino Sans', 'Yu Gothic', sans-serif;
+            opacity: 1; transition: opacity 0.35s ease;
+        }
+        #loading-overlay.done { opacity: 0; pointer-events: none; }
+        #loading-overlay .ld-spinner {
+            width: 46px; height: 46px; border-radius: 50%;
+            border: 4px solid rgba(255,255,255,0.14); border-top-color: #a78bfa;
+            animation: ld-spin 0.9s linear infinite;
+        }
+        #loading-overlay .ld-title { font-size: 1.05rem; font-weight: bold; letter-spacing: 0.05em; }
+        #loading-overlay .ld-step { font-size: 0.78rem; color: #9ca3af; min-height: 1.2em; text-align: center; padding: 0 20px; }
+        #loading-overlay .ld-bar { width: 200px; height: 4px; border-radius: 2px; background: rgba(255,255,255,0.12); overflow: hidden; }
+        #loading-overlay .ld-bar > div { height: 100%; width: 0%; background: #a78bfa; transition: width 0.3s ease; }
+        @keyframes ld-spin { to { transform: rotate(360deg); } }
+    </style>
+</head>
+<body>
+
+<div id="loading-overlay" role="status" aria-live="polite">
+    <div class="ld-spinner"></div>
+    <div class="ld-title">読み込み中…</div>
+    <div class="ld-bar"><div id="loading-bar"></div></div>
+    <div class="ld-step" id="loading-step">準備しています</div>
+</div>
+
+<header>
+    <div class="header-title-group">
+        <h1>河合塾＆ベネッセ コード検索</h1>
+    </div>
+    <div class="cart-button" onclick="openClipModal()">
+        <span>📑 転記用リスト</span>
+        <span class="cart-badge" id="cart-count">0</span>
+    </div>
+</header>
+
+<div class="container">
+    <div class="search-card">
+        <div class="search-card-header" onclick="toggleSearchCollapse()">
+            <div class="search-card-title">
+                <span id="search-toggle-icon">▼</span> 🔍 検索条件・絞り込み
+            </div>
+            <div style="font-size: 0.68rem; color: var(--primary-color); font-weight: bold;" id="search-status-label">タップして開閉</div>
+        </div>
+        <div class="search-body" id="search-body">
+            <div class="search-grid">
+                <div class="search-field" style="grid-column: 1 / -1;">
+                    <label>コード番号（河合・ベネッセどちらでもOK／3桁以上）</label>
+                    <input type="text" id="s-code" inputmode="numeric" autocomplete="off" placeholder="例: 52385 　または　 3269-01-0103" oninput="saveAndFilter()">
+                </div>
+                <div class="search-field">
+                    <label>大学名</label>
+                    <input type="text" id="s-univ" placeholder="例: 名古屋" oninput="saveAndFilter()">
+                </div>
+                <div class="search-field">
+                    <label>学部名</label>
+                    <input type="text" id="s-fac" placeholder="例: 理" oninput="saveAndFilter()">
+                </div>
+                <div class="search-field">
+                    <label>学科名</label>
+                    <input type="text" id="s-dept" placeholder="例: 物理" oninput="saveAndFilter()">
+                </div>
+                <div class="search-field">
+                    <label>日程方式名 / 日程</label>
+                    <input type="text" id="s-method" placeholder="例: 前期 / 前" oninput="saveAndFilter()">
+                </div>
+                <div class="search-field">
+                    <label>学校区分</label>
+                    <select id="s-type" onchange="saveAndFilter()">
+                        <option value="">すべて</option>
+                        <option value="1">国立大</option>
+                        <option value="2">公立大</option>
+                        <option value="3">私立大</option>
+                        <option value="4">国公立短大</option>
+                        <option value="5">私立短大</option>
+                        <option value="6">大学校</option>
+                        <option value="8">専門学校・その他</option>
+                    </select>
+                </div>
+                <div style="font-size:0.58rem; color:#64748b; line-height:1.25; padding-bottom:2px;">
+                    ※「名古屋工大」や「名古屋大」など略称でもヒットします
+                </div>
+            </div>
+        </div>
+        <div class="search-info-box" id="match-count-box" style="margin-top: 5px;">
+            <span>両方のデータを読み込んでいます...</span>
+        </div>
+    </div>
+
+    <div class="legend" id="legend">青の枠＝河合塾／オレンジの枠＝ベネッセ（それぞれコードと 学部 / 学科 / 方式 を表示）。<span class="name-diff">黄色</span>＝学部名・学科名が河合と違って見えるもの（略称のこともあるので要確認）。「推定」＝方式名の似かたから選んだ対応で、確実とまでは言えないもの（印なし＝昨年の表と同じ、または点数が高く確実）。<span class="src-flag src-flag flag-check">要確認</span>＝方式名の数字・英字が食い違うもの。「共有」＝河合の複数の行が同じベネのコードを共有。印をタップすると理由が出ます。いずれも目で確認してください。</div>
+    <div class="dl-row"><button class="secondary dl-open" onclick="openDlModal()">🔒 マッチング表をCSVでダウンロード</button></div>
+    <details id="rule-panel"><summary id="rule-panel-summary"></summary><div class="rule-body" id="rule-panel-body"></div></details>
+    <div id="status-msg">「code.csv」「benecode.csv」「match_rules.csv」を読み込んで統合しています...</div>
+    <div class="table-container" id="result-container"></div>
+</div>
+
+<!-- モーダル -->
+<div id="clip-modal" onclick="closeClipModal(event)">
+    <div class="modal-content" onclick="event.stopPropagation()">
+        <div class="modal-header">
+            <div class="modal-title">📑 転記用リスト（保存一覧）</div>
+            <button onclick="closeClipModal()">閉じる ✕</button>
+        </div>
+        <div class="modal-body" id="modal-clip-container"></div>
+        <div class="modal-footer">
+            <div class="modal-footer-left" id="modal-footer-left-area"></div>
+            <div class="modal-footer-right">
+                <button class="success" onclick="copyListAsText()">📝 テキストコピー</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div id="pick-modal" onclick="closePickModal()">
+    <div class="pick-sheet" onclick="event.stopPropagation()">
+        <div class="pick-title">どのベネを保存しますか？</div>
+        <div class="pick-sub" id="pick-sub"></div>
+        <div class="pick-kawai" id="pick-kawai"></div>
+        <div id="pick-list" style="display:flex; flex-direction:column; gap:8px;"></div>
+        <button class="secondary pick-cancel" onclick="closePickModal()">キャンセル</button>
+    </div>
+</div>
+<div id="flag-modal" onclick="closeFlagModal()">
+    <div class="pick-sheet" onclick="event.stopPropagation()">
+        <div class="pick-title" id="flag-title">この対応は未確認です</div>
+        <div class="flag-warn" id="flag-warn"></div>
+        <div class="pick-kawai" id="flag-kawai"></div>
+        <div id="flag-bene"></div>
+        <button class="success flag-opt" onclick="flagChoose('pair')">このまま保存（河合＋ベネ 1件）<small>対応が違っていたら、保存リストで削除してください</small></button>
+        <button class="flag-opt" onclick="flagChoose('sep')">別々に保存（河合・ベネ 2件）<small>あとでどちらか片方だけ削除できます。ボタンには「河合は保存済」などと出ます</small></button>
+        <button class="secondary pick-cancel" onclick="closeFlagModal()">キャンセル</button>
+    </div>
+</div>
+
+<div id="dl-modal" onclick="closeDlModal()">
+    <div class="pick-sheet" onclick="event.stopPropagation()">
+        <div class="pick-title">🔒 マッチング表のダウンロード</div>
+        <div class="pick-sub">昨年の「河合ベネ」表と同じ形式のCSVを書き出します。パスワードを入力してください。</div>
+        <input type="password" id="dl-pw" autocomplete="off" placeholder="パスワード" onkeydown="if(event.key==='Enter') doDownload()">
+        <div id="dl-err"></div>
+        <button class="success flag-opt" onclick="doDownload()">ダウンロード</button>
+        <button class="secondary pick-cancel" onclick="closeDlModal()">キャンセル</button>
+    </div>
+</div>
+<div id="toast"></div>
+
+<div id="version-stamp" aria-hidden="true"></div>
+
+<script>
+    let unifiedData = [];
+    let savedList = [];
+    let dataMap = {};
+
+    window.addEventListener("DOMContentLoaded", () => {
+        loadVersionStamp();       // 右下の更新日時（CSVの読み込みとは独立。失敗しても何も起きない）
+        loadSavedListFromStorage();
+        loadSearchConditions();
+        loadBothCSVs();
+    });
+
+    // ================= 版（更新日時）の表示 =================
+    //  GitHub Pages で公開しているときは、GitHub のAPIでこのHTMLの「最後にコミットされた日時」を取って右下に小さく出す。
+    //  取れないとき（GitHubで開いていない・APIの回数制限など）は、ファイルの最終更新日時（document.lastModified）を出す。
+    //  ※ APIは認証なしだと1時間に60回までなので、結果を10分間は端末に覚えておく。
+    function fmtStamp(d) {
+        const p2 = (n) => String(n).padStart(2, '0');
+        return `${d.getFullYear()}/${p2(d.getMonth() + 1)}/${p2(d.getDate())} ${p2(d.getHours())}:${p2(d.getMinutes())}`;
+    }
+    function showStamp(date, source) {
+        const el = document.getElementById('version-stamp');
+        if (!el || !date || isNaN(date)) return;
+        el.textContent = '更新 ' + fmtStamp(date);
+        el.title = source;
+    }
+    // 開いているURLから「持ち主・リポジトリ・ファイルのパス」を割り出す（GitHub Pages のURLのときだけ）
+    function githubRefFromLocation(loc) {
+        const m = (loc.hostname || '').match(/^([^.]+)\.github\.io$/);
+        if (!m) return null;
+        const owner = m[1];
+        const parts = (loc.pathname || '/').split('/').filter(Boolean);
+        const hasExt = (x) => /\.[A-Za-z0-9]+$/.test(x || '');
+        let repo, rest;
+        if (parts.length === 0 || (parts.length === 1 && hasExt(parts[0]))) { repo = loc.hostname; rest = parts; }   // owner.github.io 直下
+        else { repo = parts[0]; rest = parts.slice(1); }
+        if (!rest.length || !hasExt(rest[rest.length - 1])) rest = rest.concat('index.html');
+        return { owner, repo, path: rest.join('/') };
+    }
+    async function loadVersionStamp() {
+        try {
+            const lm = new Date(document.lastModified);
+            if (!isNaN(lm)) showStamp(lm, 'ファイルの最終更新（配信元の情報）');          // まず手元の情報で即表示
+            const ref = githubRefFromLocation(location);
+            if (!ref) return;
+            const key = `mix_stamp:${ref.owner}/${ref.repo}/${ref.path}`;
+            try {
+                const c = JSON.parse(localStorage.getItem(key) || 'null');
+                if (c && Date.now() - c.t < 10 * 60 * 1000) { showStamp(new Date(c.iso), 'GitHub の最終コミット日時'); return; }
+            } catch (e) { /* 覚えていない場合は取りに行く */ }
+            const ctl = (typeof AbortController === 'function') ? new AbortController() : null;
+            const timer = setTimeout(() => { if (ctl) ctl.abort(); }, 6000);
+            const res = await fetch(`https://api.github.com/repos/${ref.owner}/${ref.repo}/commits?path=${encodeURIComponent(ref.path)}&per_page=1`,
+                { headers: { 'Accept': 'application/vnd.github+json' }, signal: ctl ? ctl.signal : undefined });
+            clearTimeout(timer);
+            if (!res.ok) return;                                                       // 回数制限など → ファイルの更新日時のまま
+            const list = await res.json();
+            const iso = list && list[0] && list[0].commit && (list[0].commit.committer || list[0].commit.author || {}).date;
+            if (!iso) return;
+            showStamp(new Date(iso), 'GitHub の最終コミット日時');
+            try { localStorage.setItem(key, JSON.stringify({ t: Date.now(), iso })); } catch (e) { /* 保存できなくても表示はできている */ }
+        } catch (e) { /* 表示は飾りなので、失敗しても何もしない */ }
+    }
+
+    // ベネッセの学校区分コード(大学コード先頭1桁) → 河合の学校区分コードへ変換
+    // 河合: 1国 2公 3私 4国公立短大 5私立短大 6大学校 8専門学校等
+    // ベネ: 1国 2公 3私 4大学校 5公立短大 6私立短大 7専門 8看護専門 9分野系
+    const BENE_TYPE_TO_KAWAI = { '1':'1', '2':'2', '3':'3', '4':'6', '5':'4', '6':'5', '7':'8', '8':'8', '9':'8' };
+
+    // 河合「大学グループ区分」→ 日程（ベネの「日程」と同じ記号にそろえる）
+    //   D=前期 E=後期 C=中期 N=別日程(独自) 1=共通テスト利用(私大) 空白=一般(私大)
+    const GRP_TO_SCHED = { 'D': '前', 'E': '後', 'C': '中', 'N': '独', '1': '共' };
+
+    // 検索用: 全角英数→半角, 小文字化
+    // 旧字体・異体字 → 新字体。「國學院」と「国学院」のように、河合とベネで字体が違っても同じ名前として比べるため。
+    //   比較のキーを作るときだけ使う（画面に出す名前は元の字のまま）。大学名・学部名・学科名・方式名のすべての比較に効く
+    const OLD_KANJI = (() => {
+        const m = {};
+        ('亞亜 惡悪 壓圧 圍囲 爲為 醫医 壹壱 稻稲 飮飲 隱隠 營営 榮栄 衞衛 驛駅 圓円 鹽塩 奧奥 應応 橫横 歐欧 黃黄 溫温 穩穏 假仮 價価 畫画 會会 繪絵 壞壊 懷懐 檢検 劍剣 險険 圈圏 縣県 顯顕 驗験 嚴厳 廣広 鑛鉱 號号 國国 濟済 齋斎 櫻桜 參参 殘残 絲糸 齒歯 兒児 辭辞 實実 舍舎 寫写 釋釈 壽寿 收収 從従 澁渋 縱縦 處処 獎奨 條条 乘乗 淨浄 疊畳 讓譲 觸触 愼慎 眞真 盡尽 圖図 數数 瀨瀬 淸清 靑青 聲声 齊斉 稅税 攝摂 專専 戰戦 淺浅 潛潜 錢銭 禪禅 錄録 雙双 莊荘 裝装 增増 臟臓 屬属 續続 體体 對対 帶帯 臺台 瀧滝 擇択 澤沢 擔担 單単 團団 彈弾 斷断 晝昼 蟲虫 廳庁 聽聴 鐵鉄 轉転 點点 傳伝 燈灯 當当 黨党 德徳 獨独 讀読 腦脳 廢廃 賣売 髮髪 拔抜 佛仏 變変 豐豊 與与 樣様 來来 賴頼 亂乱 覽覧 龍竜 兩両 綠緑 勵励 禮礼 靈霊 齡齢 曆暦 歷歴 戀恋 勞労 樓楼 灣湾 﨑崎 髙高 邊辺 邉辺 藝芸 舊旧 彌弥 彥彦 惠恵 靜静 關関 經経 觀観 發発 區区 藥薬 總総 產産 歸帰 氣気 擧挙 狹狭 峽峡 學学').split(' ').forEach(p => { m[p[0]] = p[1]; });
+        return m;
+    })();
+    const OLD_KANJI_RE = new RegExp('[' + Object.keys(OLD_KANJI).join('') + ']', 'g');
+    const nz = (s) => String(s || '').normalize('NFKC').toLowerCase().replace(OLD_KANJI_RE, (c) => OLD_KANJI[c]);
+    const stripSpace = (s) => String(s || '').replace(/['\u3000\s]+/g, '');
+    // ベネ側の名前（確認用に画面へ出す）。コードと一緒に持たせる
+    function bInfo(b) { return { bu: b.univ, bf: b.rawFac, bd: b.rawDept, bm: b.method.trim(), bs: b.sched, bk: b.sched === '共' && b.type !== '1' && b.type !== '2', bx: b.mx || '', bw: b.way || '' }; }   // bk=共バッジを付けるか（国公立は付けない）
+    const esc = (s) => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+
+
+    // =====================================================================
+    //  読み替えルール（match_rules.csv）
+    //   「河合ではこう書く／ベネッセではこう書く」という対応表を、プログラムの外（CSV）に置いています。
+    //   書式: 種別,河合塾,ベネッセ,メモ      ※ 書き方の説明は match_rules.csv の先頭にあります
+    //     大学 … 大学名まるごとの対応      （名古屋工業 ⇔ 名古屋工大）
+    //     学部 / 学科 / 方式 … ベネ側の文字列の「一部」を河合の書き方に置き換えてから比較（共プラ → 共通テスト＋）
+    //     地域 … ベネの略称が指す言語名（中欧 → ポーランド/チェコ/…）。河合側は / 区切りで複数書ける
+    //   プログラムはこの表を読むだけなので、対応が増えたらCSVに1行足せばOKです。
+    // =====================================================================
+
+    // 記号（／－・ー など）と空白を除いた比較用の文字列
+    const nameKey = (t) => nz(t).replace(/[\s／/－\-ー・･()（）]+/g, '');
+    // ルール照合用: 全角半角・大文字小文字・空白（全角スペース含む）の違いを無視
+    const ruleKey = (s) => stripSpace(nz(s));
+
+    const RULE_KIND = { '大学': 'univ', '学部': 'fac', '学科': 'dept', '方式': 'method', '地域': 'region' };
+
+    // 「ベネの文字列の一部 → 河合の書き方」への置き換え器。長い語を先に当てる（「共プラス」を「共プラ」より先に）
+    function makeReplacer(rows) {
+        const map = new Map();
+        rows.forEach(r => { const f = ruleKey(r.bene); if (f && !map.has(f)) map.set(f, ruleKey(r.kawai)); });
+        const used = new Set();
+        const froms = [...map.keys()].sort((a, b) => b.length - a.length);
+        const re = froms.length ? new RegExp(froms.map(f => f.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')).join('|'), 'g') : null;
+        return {
+            apply(text) {                       // → { text, hit }   当たらなければ元の文字列をそのまま返す
+                if (!re) return { text, hit: false };
+                let hit = false;
+                const out = ruleKey(text).replace(re, m => { hit = true; used.add(m); return map.get(m); });
+                return hit ? { text: out, hit: true } : { text, hit: false };
+            },
+            unused() { return rows.filter(r => !used.has(ruleKey(r.bene))); }   // 一度も使われなかったルール（書き間違いの発見用）
+        };
+    }
+
+    // 「対象大学」つきのルールに対応した置き換え器。
+    //   対象大学を書いた行は、その大学のときだけ使う（先に試す）。書いていない行は全大学で使う。
+    //   （「３ベス」のように大学ごとに意味が違う略語は、対象大学つきで書く）
+    function makeScopedReplacer(rows) {
+        const common = makeReplacer(rows.filter(r => !r.scope));
+        const byScope = new Map();
+        rows.filter(r => r.scope).forEach(r => { const k = ruleKey(r.scope); if (!byScope.has(k)) byScope.set(k, []); byScope.get(k).push(r); });
+        const scoped = [...byScope.entries()].map(([scope, rs]) => ({ scope, rep: makeReplacer(rs) }));
+        return {
+            apply(text, univ) {
+                const u = ruleKey(univ || '');
+                if (u) for (const x of scoped) {
+                    if (u.includes(x.scope) || x.scope.includes(u)) { const r = x.rep.apply(text); if (r.hit) return Object.assign(r, { scoped: true }); }   // 「大東文化」⊂「大東文化大」
+                }
+                return common.apply(text);
+            },
+            unused() { return [...common.unused(), ...scoped.flatMap(x => x.rep.unused())]; }
+        };
+    }
+
+    function emptyRules() {
+        return { loaded: false, warnings: [], univ: new Map(), region: new Map(),
+                 fac: makeScopedReplacer([]), dept: makeScopedReplacer([]), method: makeScopedReplacer([]) };
+    }
+
+    function parseRules(text) {
+        const R = emptyRules(); R.loaded = true;
+        const rows = { fac: [], dept: [], method: [] };
+        text.replace(/^\ufeff/, '').split(/\r\n|\n|\r/).forEach((line, i) => {
+            const t = line.trim();
+            if (!t || t.startsWith('#')) return;                 // 空行・「#」で始まるコメント行は無視
+            const c = parseCSVLine(line);
+            if (c.every(x => !x.trim())) return;                  // 「,,,」だけの行（Excelで保存した空行）も空行として無視
+            if (c[0] === '種別') return;                          // 見出し行
+            const kind = RULE_KIND[c[0]];
+            const kawai = (c[1] || '').trim(), bene = (c[2] || '').trim();
+            if (!kind) { R.warnings.push(`${i + 1}行目: 種別「${c[0]}」が分かりません（大学・学部・学科・方式・地域のどれか）`); return; }
+            if (!kawai || !bene) { R.warnings.push(`${i + 1}行目: 河合かベネッセの欄が空です`); return; }
+            const row = { kind, kawai, bene, line: i + 1, scope: (c[4] || '').trim() };   // 5列目＝対象大学（省略可）
+            if (kind === 'univ') {
+                const key = ruleKey(bene);
+                if (R.univ.has(key)) R.warnings.push(`${i + 1}行目: ベネ「${bene}」はすでに ${R.univ.get(key).line} 行目で指定済みです（先の行を採用）`);
+                else R.univ.set(key, row);
+            } else if (kind === 'region') {
+                R.region.set(nameKey(bene), kawai.split(/[\/／|｜]/).map(s => s.trim()).filter(Boolean));
+            } else rows[kind].push(row);
+        });
+        R.fac = makeScopedReplacer(rows.fac); R.dept = makeScopedReplacer(rows.dept); R.method = makeScopedReplacer(rows.method);
+        return R;
+    }
+
+    let RULES = emptyRules();
+
+    // =====================================================================
+    //  前年度の「河合×ベネ 共通テスト用マッチング表」（ref_pairs.csv）
+    //   河合塾とベネッセが共同で作った表を、make_ref_pairs.py で CSV にしたものです（無くても動きます）。
+    //   ここから「正解の組」を読み取り、次の3つに使います。どれも【名前が昨年と同じときだけ】採用します
+    //   （コードは年度で使い回されることがあるため。名前が変わっていたら、その行は従来どおり名前の似かたで結びます）
+    //     (1) 組そのもの … 河合の行⇔ベネの行（共通テスト利用・国公立）。そのまま確定
+    //     (2) 学科の対応 … ベネの「大学・学部・学科」コード(上8桁)→河合の学科コード(上8桁)。
+    //                     一般入試の行（昨年の表に載っていない）も、同じ学科なら河合のどの学科かが分かる
+    //     (3) 相手なし … 昨年の表でベネだけ／河合だけだった行。無理に結ばない
+    // =====================================================================
+
+    // =====================================================================
+    //  方式名の対応づけモデル（method_model.csv）
+    //   同じ学科の中で「ベネの方式名（前４均）」と「河合の方式名（前期４科目）」が同じ方式かどうかを点数にします。
+    //   点数 = 切片 + Σ（特徴 × 重み）。重みは、昨年の河合×ベネ表（約1.2万組の正解）から train_method_model.py で学習したものです。
+    //   特徴の作りかた（methodFeats）は train_method_model.py の feats() と同じでなければなりません。
+    //   点数の目安（見たことのない大学での検証）:  3以上＝98%が正解 / 0〜3＝約90% / 0未満＝約80%以下
+    // =====================================================================
+    let MODEL = { loaded: false, b: 0, w: new Map() };
+    function parseModel(text) {
+        const M = { loaded: false, b: 0, w: new Map() };
+        text.replace(/^﻿/, '').split(/\r\n|\n|\r/).forEach(line => {
+            const t = line.trim();
+            if (!t || (t.startsWith('#') && !t.startsWith('#intercept')) || t.startsWith('特徴,')) return;
+            const i = t.lastIndexOf(',');
+            if (i < 0) return;
+            const key = t.slice(0, i), val = parseFloat(t.slice(i + 1));
+            if (isNaN(val)) return;
+            if (key === '#intercept') M.b = val; else M.w.set(key, val);
+        });
+        M.loaded = M.w.size > 0;
+        return M;
+    }
+    const mnz = (s) => nz(s).replace(/\s+/g, '');
+    const isNumTok = (t) => t.charCodeAt(0) >= 48 && t.charCodeAt(0) <= 57;
+    function methodFeats(bway, kmethod) {
+        const bs = mnz(bway).replace(/^共/, ''), ks = mnz(kmethod);
+        const TOK = /[0-9]+|[a-z]|[^0-9a-z]/gu;
+        const bt = bs.match(TOK) || [], kt = ks.match(TOK) || [];
+        const f = new Map();
+        const bdl = bt.filter(isNumTok), kdl = kt.filter(isNumTok);
+        const bl = new Set(bt.filter(t => t.length === 1 && t >= 'a' && t <= 'z')), kl = new Set(kt.filter(t => t.length === 1 && t >= 'a' && t <= 'z'));
+        const inter = (a, b) => [...a].some(x => b.has(x));
+        const bd = new Set(bdl), kd = new Set(kdl);
+        if (bd.size && kd.size) f.set(inter(bd, kd) ? 'dig_match' : 'dig_conf', 1);
+        else if (bd.size) f.set('dig_bonly', 1);
+        else if (kd.size) f.set('dig_konly', 1);
+        else f.set('dig_none', 1);
+        if (bl.size && kl.size) f.set(inter(bl, kl) ? 'let_match' : 'let_conf', 1);
+        else if (bl.size) f.set('let_bonly', 1);
+        else if (kl.size) f.set('let_konly', 1);
+        if (bdl.length && kdl.length) {
+            const same = (a, b) => a.length === b.length && a.every((x, i) => x === b[i]);
+            if (same(bdl, kdl)) f.set('dseq_eq', 1);
+            else if (same(kdl.slice(0, bdl.length), bdl)) f.set('dseq_prefix', 1);
+            else if (same(bdl.slice(0, kdl.length), kdl)) f.set('dseq_kprefix', 1);
+            else {
+                f.set('dseq_diff', 1);
+                if (bdl[0] === kdl[0]) f.set('dseq_first_eq', 1);
+                if (bdl[bdl.length - 1] === kdl[kdl.length - 1]) f.set('dseq_last_eq', 1);
+            }
+            if (bdl.length > 1 || kdl.length > 1) for (let i = 0; i < Math.min(bdl.length, kdl.length); i++) f.set('dpos' + i + '_' + (bdl[i] === kdl[i] ? 'eq' : 'ne'), 1);
+        }
+        const bc = bt.filter(t => !isNumTok(t)), kc = kt.filter(t => !isNumTok(t));
+        const frac = (a, b) => { const rest = b.slice(); let n = 0; for (const c of a) { const i = rest.indexOf(c); if (i >= 0) { rest.splice(i, 1); n++; } } return a.length ? n / a.length : 1.0; };
+        const fb = frac(bc, kc), fk = frac(kc, bc);
+        f.set('fb', fb); f.set('fk', fk); f.set('fb*fk', fb * fk);
+        f.set('bempty', bc.length ? 0 : 1); f.set('kempty', kc.length ? 0 : 1);
+        if (!bs && !ks) f.set('both_empty', 1);
+        const subseq = (a, b) => { let i = 0; for (const c of b) if (i < a.length && c === a[i]) i++; return i === a.length; };
+        if (bc.length && subseq(bc, kc)) f.set('b_sub_k', 1);
+        if (kc.length && subseq(kc, bc)) f.set('k_sub_b', 1);
+        const bset = new Set(bc), kset = new Set(kc);
+        f.set('unexp_b', bc.length - [...bset].filter(c => kc.includes(c)).length);
+        f.set('unexp_k', kc.length - [...kset].filter(c => bc.includes(c)).length);
+        const bsa = Array.from(bs), ksa = Array.from(ks);
+        const bb = [], kb = [];
+        for (let i = 0; i < bsa.length - 1; i++) bb.push(bsa[i] + bsa[i + 1]);
+        for (let i = 0; i < ksa.length - 1; i++) kb.push(ksa[i] + ksa[i + 1]);
+        const bbs = new Set(bb), kbs = new Set(kb);
+        if (bb.length) { const sh = [...bbs].filter(g => kbs.has(g)); f.set('bg_b', sh.length / bbs.size); sh.forEach(g => f.set('eq2|' + g, 1)); }
+        if (kb.length) f.set('bg_k', [...kbs].filter(g => bbs.has(g)).length / kbs.size);
+        for (const c of bset) f.set((kset.has(c) ? 'eq|' : 'bu|') + c, 1);
+        for (const d of kset) if (!bset.has(d)) f.set('ku|' + d, 1);
+        for (const c of bset) for (const d of kset) if (c !== d) f.set('x|' + c + '|' + d, 1);
+        return f;
+    }
+    function mlScore(bway, kmethod) {
+        let sc = MODEL.b;
+        for (const [k, v] of methodFeats(bway, kmethod)) { const w = MODEL.w.get(k); if (w !== undefined) sc += w * v; }
+        return sc;
+    }
+    // 割り当て問題（ハンガリー法）: n行×m列（n≦m）の費用行列 → 各行に割り当てる列番号（最小費用）
+    function hungarian(cost, n, m) {
+        const INF = 1e18, u = new Array(n + 1).fill(0), v = new Array(m + 1).fill(0), p = new Array(m + 1).fill(0), way = new Array(m + 1).fill(0);
+        for (let i = 1; i <= n; i++) {
+            p[0] = i; let j0 = 0; const minv = new Array(m + 1).fill(INF), used = new Array(m + 1).fill(false);
+            do {
+                used[j0] = true; const i0 = p[j0]; let delta = INF, j1 = 0;
+                for (let j = 1; j <= m; j++) if (!used[j]) {
+                    const cur = cost[i0 - 1][j - 1] - u[i0] - v[j];
+                    if (cur < minv[j]) { minv[j] = cur; way[j] = j0; }
+                    if (minv[j] < delta) { delta = minv[j]; j1 = j; }
+                }
+                for (let j = 0; j <= m; j++) { if (used[j]) { u[p[j]] += delta; v[j] -= delta; } else minv[j] -= delta; }
+                j0 = j1;
+            } while (p[j0] !== 0);
+            do { const j1 = way[j0]; p[j0] = p[j1]; j0 = j1; } while (j0);
+        }
+        const ans = new Array(n).fill(-1);
+        for (let j = 1; j <= m; j++) if (p[j]) ans[p[j] - 1] = j - 1;
+        return ans;
+    }
+    const ML_TAU = -4, ML_LAMBDA = 2;   // 点数が ML_TAU に届かない組は結ばない / 1つの河合の行に2つ目のベネの行を結ぶときの減点
+    // 同じ学科の中で、ベネの行（bs）と河合の行（ks）を点数の合計が最大になるように1対1（足りないときは2つまで）で結ぶ
+    //   taken: すでに別のベネの行が結ばれている河合の行（結べるのは「2つ目」の扱い）
+    function mlAssign(bs, ks, bText, schedClash, taken) {
+        const n = bs.length, m = ks.length, BIG = 1e6;
+        if (!n || !m) return [];
+        const S = bs.map(b => ks.map(k => schedClash(k.sched, b.sched) ? -BIG : mlScore(bText(b), k.method)));
+        const cost = [];
+        for (let i = 0; i < n; i++) {
+            const row = [];
+            for (let j = 0; j < m; j++) row.push(-(taken.has(ks[j]) ? -BIG : S[i][j]));      // 1つ目の枠
+            for (let j = 0; j < m; j++) row.push(-(S[i][j] - ML_LAMBDA));                      // 2つ目の枠（減点つき）
+            for (let t = 0; t < n; t++) row.push(t === i ? -ML_TAU : BIG);                     // 「結ばない」枠
+            cost.push(row);
+        }
+        const ans = hungarian(cost, n, 2 * m + n), out = [];
+        ans.forEach((j, i) => { if (j >= 0 && j < 2 * m) { const jj = j % m; if (S[i][jj] > -BIG / 2) out.push({ b: bs[i], k: ks[jj], score: S[i][jj] }); } });
+        return out;
+    }
+    function emptyRef() { return { loaded: false, rows: [] }; }
+    let REF = emptyRef();
+    function parseRef(text) {
+        const R = { loaded: true, rows: [] };
+        const lines = text.replace(/^﻿/, '').split(/\r\n|\n|\r/);
+        for (let i = 1; i < lines.length; i++) {
+            if (!lines[i].trim()) continue;
+            const c = parseCSVLine(lines[i]);
+            if (c.length < 11) continue;
+            R.rows.push({ b10: c[0], k10: c[1], bu: c[2], bf: c[3], bd: c[4], bs: c[5], bm: c[6], ku: c[7], kf: c[8], kd: c[9], km: c[10] });
+        }
+        return R;
+    }
+
+    // 統合のあとで「人が見て直すべきところ」を画面に出す（ルールの書き間違い・自動では決められなかった大学名）
+    function buildRuleDiagnostics(diag, kUnivs, bUnivs, findKawaiUniv) {
+        const items = [];
+        const add = (html) => items.push(`<div class="rule-item">${html}</div>`);
+        if (!RULES.loaded) add('「match_rules.csv」が見つからないため、読み替えルールなしで統合しました。');
+        RULES.warnings.forEach(w => add(esc(w)));
+        diag.notes.forEach(n => add(esc(n)));
+
+        // ルールの書き間違い
+        const bNorm = new Set([...bUnivs.keys()].map(ruleKey));
+        RULES.univ.forEach(r => {
+            if (findKawaiUniv(r.kawai) === undefined) add(`${r.line}行目（大学）: 河合に「${esc(r.kawai)}」という大学がありません。`);
+            else if (!bNorm.has(ruleKey(r.bene))) add(`${r.line}行目（大学）: ベネに「${esc(r.bene)}」という大学がありません。`);
+        });
+        [['学部', 'fac'], ['学科', 'dept'], ['方式', 'method']].forEach(([label, key]) => {
+            RULES[key].unused().forEach(r => add(`${r.line}行目（${label}）: 「${esc(r.bene)}」→「${esc(r.kawai)}」${r.scope ? `（対象: ${esc(r.scope)}）` : ''}は、どの行にも当てはまりませんでした（書き間違いかも）。`));
+        });
+
+        // 自動では大学名が決まらなかったもの → ルールを足してもらう
+        diag.ambiguous.forEach(a => add(`<b>${esc(a.bene)}</b>（ベネ）は、河合の大学が1つに決まりません。候補: ${a.names.map(esc).join(' / ')}<br>→ 次の1行を match_rules.csv に足してください: <code>大学,${esc(a.names[0])},${esc(a.bene)}</code>（河合の名前は候補から選ぶ）`));
+        diag.guessed.forEach(g => add(`<b>${esc(g.bene)}</b>（ベネ）は候補が複数あり、短い名前の「${esc(g.picked)}」と推測しました（他の候補: ${g.names.filter(n => n !== g.picked).map(esc).join(' / ')}）。違っていたら <code>大学,河合の名前,${esc(g.bene)}</code> を足してください。`));
+
+        if (diag.kyoMismatch && diag.kyoMismatch.length) {
+            const L = diag.kyoMismatch;
+            add(`<b>共通テスト利用の有無が食い違って結ばれたもの（${L.length}件）</b>: 河合は共${L[0].m.kyo ? 'あり' : 'なし'}・ベネは共${L[0].c.bk ? 'あり' : 'なし'} のような組です。<br>` +
+                L.slice(0, 15).map(x => `${esc(x.m.univ)} ${esc(x.m.fac)}/${esc(x.m.dept)} ${esc(x.m.method)}（河合${esc(x.m.kawaiCode)}・河合${x.m.kyo ? '共あり' : '共なし'}） ⇔ ベネ${esc(x.c.code)}（${x.c.bk ? '共あり' : '共なし'}）`).join('<br>') +
+                (L.length > 15 ? `<br>…ほか ${L.length - 15}件` : ''));
+        }
+        const panel = document.getElementById('rule-panel');
+        if (!panel) return;
+        if (!items.length) { panel.style.display = 'none'; return; }
+        const nAmb = diag.ambiguous.length;
+        document.getElementById('rule-panel-summary').textContent = `⚠ 読み替えルールの確認（${items.length}件${nAmb ? `・大学名が決まらないもの ${nAmb}件` : ''}）`;
+        document.getElementById('rule-panel-body').innerHTML = items.join('');
+        panel.style.display = 'block';
+    }
+
+    // =====================================================================
+    //  結びつきの確からしさ（「推定」「要確認」の判定）
+    //   これまでは「どの段階で結んだか」だけで「推定」を付けていたので、確かなものにも付き、あやしいものに付かないことがあった。
+    //   今は、結んだあとに「方式名の中身」と「その学科の選択肢の数」を見て、一貫したルールで判定し直す。
+    //     確実（印なし） … 方式名の語がすべて対応する／略称の関係にある／その学科に河合もベネも1行だけ（他に選びようがない）
+    //     要確認         … 方式名の数字が食い違う（高得点２科目型 ⇔ 高得１）
+    //     推定           … 上のどれでもなく、手がかりがないまま複数の候補から選んだ
+    //   国公立は方式名が「前期／前」と単純で、ベネの方式欄に科目名が入る形なので、この判定はせず従来のまま。
+    // =====================================================================
+    const METHOD_GENERIC = /共通テスト|共テ|プラス|プラ|前期|後期|中期|方式|日程|入試|試験|選抜|一般|教科|科目|型|期|前|後|中|共|第|回|科/g;
+    // 方式名から「見分けるための語」だけを取り出す（数字・英字1文字・その他の語）
+    function methodTokens(text) {
+        // ローマ数字（Ⅰ期・Ⅱ期）は「第○期」と同じ働きなので無視して、数字・英字・語だけで比べる
+        const x = nz(String(text || '').replace(/[\u2160-\u216B\u2170-\u217B]/g, ' ')).replace(/\s+/g, '').replace(/[（()）【】\[\]]/g, ' ').replace(METHOD_GENERIC, ' ');
+        const out = [];
+        x.split(/[\s・\/\-－＋+、,]+/).forEach(w => { if (w) (w.match(/\d+|[a-z]|[^\da-z]+/g) || []).forEach(p => out.push(p)); });
+        return out;
+    }
+    // 河合の方式名とベネの方式名の関係: 'conflict'(数字が食い違う) / 'same'(語がすべて対応・文字が同一) / 'abbr'(略称) / 'other'
+    function methodEvidence(kText, bText) {
+        const plain = (t) => nz(t).replace(/\s+/g, '').replace(/^共/, '').replace(/[（()）【】\[\]]/g, '');
+        const ks = plain(kText), bs = plain(bText);
+        const K = methodTokens(kText), B = methodTokens(bText);
+        const isNum = (t) => /^\d+$/.test(t);
+        const kd = K.filter(isNum), bd = B.filter(isNum);
+        if (kd.length && bd.length && !bd.some(x => kd.includes(x))) return 'conflict';            // 数字が食い違う（２科目型 ⇔ ３科…）
+        const kl = K.filter(t => /^[a-z]$/.test(t)), bl = B.filter(t => /^[a-z]$/.test(t));
+        if (kl.length && bl.length && !bl.some(x => kl.includes(x))) return 'conflict';            // 英字が食い違う（Ｂ日程 ⇔ Ａ指定）
+        if (!ks && !bs) return 'same';                                                              // どちらも方式名なし（「共」だけ・空欄）
+        if (ks && bs && ks === bs) return 'same';
+        const tokMatch = (a, b) => a === b || (a.length >= 2 && b.length >= 2 && (a.startsWith(b) || b.startsWith(a)));   // 「スタ」⇔「スタンダード」
+        if (K.length && B.length) {
+            const bIn = B.filter(b => K.some(k => tokMatch(k, b))), kIn = K.filter(k => B.some(b => tokMatch(k, b)));
+            if (bIn.length === B.length && kIn.length === K.length) return 'same';
+            // 片方の語が全部もう片方に含まれ、余った語が英字・数字ではない（「併用」「外部」など）ときも対応とみなす（「Ａ日程併用」⇔「Ａ」）。
+            //   余った語が英字・数字なら別の方式の可能性があるので対応とはしない（「Ｃ方式３教科」⇔「３」は C が余る）
+            const isSym = (t) => /^[a-z]$/.test(t) || isNum(t);
+            if (bIn.length === B.length && !K.filter(k => !B.some(b => tokMatch(k, b))).some(isSym)) return 'same';
+            if (kIn.length === K.length && !B.filter(b => !K.some(k => tokMatch(k, b))).some(isSym)) return 'same';
+        }
+        // 数字だけで見分ける方式（「２科目」⇔「２科前」）: 数字が合い、数字以外の語が両側にない
+        if (kd.length && bd.length && !K.some(t => !isNum(t)) && !B.some(t => !isNum(t)) && bd.every(x => kd.includes(x)) && kd.every(x => bd.includes(x))) return 'same';
+        if (bs.length >= 2 && ks.length >= 2 && (isSubsequence(bs, ks) || isSubsequence(ks, bs))) return 'abbr';   // 「英語外部」⇔「英外部」
+        return 'other';
+    }
+
+    // 大学名のキー（末尾の「大学」「大」だけ除去。「大学」を付け足さない）
+    function univKey(name) {
+        return stripSpace(nz(name)).replace(/大学$/, '').replace(/大$/, '');   // 旧字体・全角半角の違いは吸収して比べる
+    }
+
+    // 日程の種別: 前 / 後 / 中 / '' (共通テスト利用・独自・不明)
+    function schedKey(text) {
+        const t = String(text || '');
+        if (t.includes('前')) return '前';
+        if (t.includes('後')) return '後';
+        if (t.includes('中')) return '中';
+        return '';
+    }
+
+    // 部分列判定: short の文字が long の中に順番通りに含まれるか（「旭川医大」⊂「旭川医科大学」）
+    function isSubsequence(short, long) {
+        let i = 0;
+        for (const c of long) { if (c === short[i]) i++; if (i === short.length) return true; }
+        return i === short.length;
+    }
+
+    // ---- 読み込み画面 ----
+    // 画面を1回描画させてから重い処理に入る（これをしないと、読み込み画面が出る前に処理が始まって固まって見える）
+    const nextPaint = () => new Promise(r => {
+        if (typeof requestAnimationFrame === 'function') requestAnimationFrame(() => setTimeout(r, 0));
+        setTimeout(r, 120);   // 裏タブなどで描画が止まっていても先へ進める
+    });
+    async function setLoading(text, percent) {
+        const t = document.getElementById('loading-step'), b = document.getElementById('loading-bar');
+        if (t) t.textContent = text;
+        if (b) b.style.width = percent + '%';
+        await nextPaint();
+    }
+    function hideLoading() {
+        const o = document.getElementById('loading-overlay');
+        if (!o) return;
+        const b = document.getElementById('loading-bar'); if (b) b.style.width = '100%';
+        o.classList.add('done');                              // フェードアウト
+        setTimeout(() => { o.style.display = 'none'; }, 400);
+    }
+
+    async function loadBothCSVs() {
+        try {
+            await setLoading('河合塾「code.csv」を読み込み中…', 8);
+            const kawaiRes = await fetch('./code.csv');
+            if (!kawaiRes.ok) throw new Error("「code.csv」が見つかりません（404）。");
+            const kawaiBuffer = await kawaiRes.arrayBuffer();
+            let kawaiText = decodeTextWithFallback(kawaiBuffer);
+            
+            await setLoading('ベネッセ「benecode.csv」を読み込み中…', 30);
+            const beneRes = await fetch('./benecode.csv');
+            if (!beneRes.ok) throw new Error("「benecode.csv」が見つかりません（404）。");
+            const beneBuffer = await beneRes.arrayBuffer();
+            let beneText = decodeTextWithFallback(beneBuffer);
+
+            // 読み替えルール（無くても動く。無い場合は画面で知らせる）
+            await setLoading('読み替えルール「match_rules.csv」を読み込み中…', 50);
+            RULES = emptyRules();
+            try {
+                const ruleRes = await fetch('./match_rules.csv', { cache: 'no-cache' });
+                if (ruleRes.ok) RULES = parseRules(decodeTextWithFallback(await ruleRes.arrayBuffer()));
+            } catch (e) { /* ルールなしで続行 */ }
+
+            // 昨年の河合×ベネ表（無くても動く）
+            await setLoading('前年度の対応表「ref_pairs.csv」を読み込み中…', 58);
+            REF = emptyRef();
+            try {
+                const refRes = await fetch('./ref_pairs.csv', { cache: 'no-cache' });
+                if (refRes.ok) REF = parseRef(decodeTextWithFallback(await refRes.arrayBuffer()));
+            } catch (e) { /* 前年度表なしで続行 */ }
+
+            // 方式名の対応づけモデル（無くても動く。無い場合は従来の名前の似かたによる判定）
+            MODEL = { loaded: false, b: 0, w: new Map() };
+            try {
+                const mRes = await fetch('./method_model.csv', { cache: 'no-cache' });
+                if (mRes.ok) MODEL = parseModel(decodeTextWithFallback(await mRes.arrayBuffer()));
+            } catch (e) { /* モデルなしで続行 */ }
+
+            await setLoading('河合とベネッセを照合しています…（少し時間がかかります）', 65);
+            parseAndMerge(kawaiText, beneText);
+        } catch (err) {
+            document.getElementById("status-msg").innerText = "エラー: " + err.message;
+            document.getElementById("status-msg").className = "guide-msg error";
+            document.getElementById("match-count-box").innerHTML = `<span>読み込み失敗</span><span class="highlight-count error">エラー発生</span>`;
+        } finally {
+            hideLoading();   // 成功でも失敗でも、読み込み画面は閉じる（失敗時はエラー表示が見える）
+        }
+    }
+
+    function decodeTextWithFallback(buffer) {
+        const encodings = ["utf-8", "shift_jis"];   // UTF-8として正しく読めればUTF-8、だめならShift_JIS
+        for (let enc of encodings) {
+            try {
+                const decoder = new TextDecoder(enc, { fatal: true });
+                const text = decoder.decode(buffer);
+                if (text && text.length > 0) return text;
+            } catch(e) {}
+        }
+        const decoder = new TextDecoder("utf-8");
+        return decoder.decode(buffer);
+    }
+
+    function parseCSVLine(text) {
+        let result = [], cur = '', inQuotes = false;
+        for (let i = 0; i < text.length; i++) {
+            let c = text[i];
+            if (c === '"') { inQuotes = !inQuotes; }
+            else if (c === ',' && !inQuotes) { result.push(cur.trim().replace(/^"|"$/g, '')); cur = ''; }
+            else { cur += c; }
+        }
+        result.push(cur.trim().replace(/^"|"$/g, ''));
+        return result;
+    }
+
+    function parseAndMerge(kawaiText, beneText) {
+        // --- 河合塾パース ---
+        const kLines = kawaiText.split(/\r\n|\n/);
+        if (kLines.length < 2) throw new Error("code.csvの中身が空か、フォーマットが不正です。");
+        const kHeaders = kLines[0].split(',').map(h => h.trim().replace(/^"|"$/g, '').replace(/^'/, '').replace(/^\ufeff/, ''));
+        const kCol = {};
+        kHeaders.forEach((h, idx) => { kCol[h] = idx; });
+        const kCode5Key = Object.keys(kCol).find(k => k.includes('記入用大学コード'));
+        const kShortKey = Object.keys(kCol).find(k => k.includes('学科') && k.includes('短縮'));   // 「学科短縮名」の列（「共テ」があれば共通テスト利用）
+        const kCode10Key = Object.keys(kCol).find(k => k.includes('大学コード') && k.includes('10桁'));   // 「学科短縮名」の列（「共テ」があれば共通テスト利用）
+
+        const kList = [];
+        for (let i = 1; i < kLines.length; i++) {
+            if (!kLines[i].trim()) continue;
+            const row = parseCSVLine(kLines[i]);
+            if (row.length < kHeaders.length) continue;
+
+            const kCode5 = kCode5Key ? row[kCol[kCode5Key]] : '';
+            const univ = row[kCol['大学名']] || '';
+            if (!kCode5 || !univ) continue;
+            const fac = row[kCol['学部名']] || '';
+            const dept = row[kCol['学科名']] || '';
+            const method = row[kCol['日程方式名']] || '';
+            const type = String(row[kCol['学校区分']] || '').trim();
+            const grp = String(row[kCol['大学グループ区分']] || '').trim();
+            const shortName = kShortKey ? String(row[kCol[kShortKey]] || '') : '';
+
+            kList.push({
+                id: 'k' + String(kCode5).trim(),          // 河合5桁コードは一意 → 安定したID
+                univ, key: univKey(univ),
+                rawFac: fac, rawDept: dept,
+                fac: fac && fac !== '学部なし' ? stripSpace(fac) : '',
+                dept: dept && dept !== '学科なし' ? stripSpace(dept) : '',
+                method, sched: GRP_TO_SCHED[grp] || '', grp, type,
+                // 共通テスト利用か: 大学グループ区分が「1」（河合のデータ上の共通テスト利用。ベネの日程「共」と同じもの）、
+                //   または学科短縮名に「共テ」「共通テスト」「テ前」「テ併」がある（ただし「マーケテ前」「インテ前」は除く）。
+                //   国公立（区分1・2）には「共」は付けない
+                kyo: type !== '1' && type !== '2' && (grp === '1' || /共テ|共通テスト|テ前|テ併/.test(nz(shortName).replace(/マーケテ前|インテ前/g, ''))),
+                codeKawai5: String(kCode5).trim(),
+                code10: kCode10Key ? String(row[kCol[kCode10Key]] || '').trim() : ''
+            });
+        }
+
+        // --- ベネッセパース（列番号固定） ---
+        const bLines = beneText.split(/\r\n|\n/);
+        if (bLines.length < 2) throw new Error("benecode.csvの中身が空か、フォーマットが不正です。");
+        const cleanVal = (s) => s ? String(s).replace(/^'/, '').trim() : '';
+
+        const bList = [];
+        for (let i = 1; i < bLines.length; i++) {
+            if (!bLines[i].trim()) continue;
+            const row = parseCSVLine(bLines[i]);
+            if (row.length < 11) continue;
+
+            if (cleanVal(row[12]) === '0') continue;   // 募集単位 0＝学部代表（実際には使わないコード）は除外
+            const uCode = cleanVal(row[0]), fCode = cleanVal(row[1]), dCode = cleanVal(row[2]);
+            const mCode = cleanVal(row[3]), wCode = cleanVal(row[4]);
+            const univ = cleanVal(row[6]);
+            if (!uCode || !univ) continue;
+            let fac = cleanVal(row[7]), dept = cleanVal(row[8]);
+            const dept0 = dept;
+            // 短大（ベネのコードが 5・6 で始まる公立・私立短大）は、ベネでは「学部」の欄が空で「学科」の欄に名前が入る。
+            //   河合では同じものが「学部」の欄に入るので、ベネ側を河合に合わせて「学部」の欄へ寄せる。
+            //   （大学校=4・専門学校など=7〜9 は、河合もベネも「学科」の欄に入っていて同じ形なので、そのまま）
+            //   「商経／経済」のように「学部／学科」が1つの欄に並んでいるときは、「／」の前を学部・後ろを学科に分ける
+            if (!fac && dept && ['5', '6'].includes(uCode.charAt(0))) {
+                const parts = dept.split(/[／\/]/).map(x => x.trim());
+                if (parts.length >= 2 && parts[0] && parts[1]) { fac = parts[0]; dept = parts.slice(1).join('／'); }
+                else { fac = dept; dept = ''; }
+            }
+            const sched = cleanVal(row[9]), way = cleanVal(row[10]);
+            const rf = RULES.fac.apply(fac, univ), rd = RULES.dept.apply(dept, univ);   // 読み替えルール（学部・学科）。表示は元の名前のまま
+
+            const raw10 = `${uCode.padStart(4, '0')}${fCode.padStart(2, '0')}${dCode.padStart(2, '0')}${mCode.slice(-1)}${wCode.slice(-1)}`;
+            bList.push({
+                id: 'b' + raw10,                          // ベネ10桁コードは一意
+                b10: raw10, dept0,                        // 前年度表との照合用（短大の学部/学科の寄せ替え前の学科名も持つ）
+                univ, key: univKey(univ),
+                rawFac: fac, rawDept: dept,           // 表示用（元の名前）
+                mFac: rf.text, mDept: rd.text,        // 比較用（読み替え後）
+                fac: stripSpace(rf.text), dept: stripSpace(rd.text),
+                method: sched + (way ? ' ' + way : ''),
+                sched: ['前', '後', '中', '独', '共'].includes(sched.charAt(0)) ? sched.charAt(0) : '',
+                type: BENE_TYPE_TO_KAWAI[uCode.charAt(0)] || '8',   // ← 河合の区分に変換
+                codeBene: `${raw10.substring(0, 4)}-${raw10.substring(4, 6)}-${raw10.substring(6)}`
+            });
+        }
+
+        // --- 前年度の河合×ベネ表との照合（ref_pairs.csv） ---
+        //   名前が昨年と同じ行だけを採用する（コードが別の学科・方式に使い回されていたら、使わない）
+        const refStat = { pair: 0, dept: 0, kNone: 0, bNone: 0, stale: 0, rows: REF.rows.length };
+        const refDept = new Map();      // ベネ学科コード(上8桁) -> Map(河合学科コード(上8桁) -> 件数)
+        if (REF.loaded && REF.rows.length) {
+            const sameN = (x, y) => ruleKey(x) === ruleKey(y);
+            const kByCode = new Map(kList.filter(k => k.code10).map(k => [k.code10, k]));
+            const bByCode = new Map(bList.map(b => [b.b10, b]));
+            // ベネ側: 学科名・日程が昨年と同じで、大学名の頭の文字も同じ（方式名は昨年の表が正式名・今年は略称なので比べない）
+            const bOK = (b, r) => (sameN(b.rawDept, r.bd) || sameN(b.dept0, r.bd)) && b.sched === (['前', '後', '中', '独', '共'].includes((r.bs || '').charAt(0)) ? r.bs.charAt(0) : '') && nz(b.univ).charAt(0) === nz(r.bu).charAt(0);
+            // 河合側: 大学・学部・学科が昨年と同じ（方式名まで同じなら full）
+            const kDeptOK = (k, r) => sameN(k.univ, r.ku) && sameN(k.rawFac, r.kf) && sameN(k.rawDept, r.kd);
+            const kOK = (k, r) => kDeptOK(k, r) && sameN(k.method, r.km);
+            REF.rows.forEach(r => {
+                const k = r.k10 ? kByCode.get(r.k10) : null, b = r.b10 ? bByCode.get(r.b10) : null;
+                if (r.b10 && r.k10) {
+                    if (!k || !b) { if (k || b) refStat.stale++; return; }
+                    const bo = bOK(b, r), kd = kDeptOK(k, r);
+                    if (bo && kd) {                                              // 学科の対応（方式が変わっていても学科は使える）
+                        const a = refDept.get(b.b10.slice(0, 8)) || new Map(); a.set(k.code10.slice(0, 8), (a.get(k.code10.slice(0, 8)) || 0) + 1); refDept.set(b.b10.slice(0, 8), a);
+                    }
+                    if (REF.mode === 'dept') return;                              // （検証用）学科の対応だけ使う
+                    if (bo && kOK(k, r)) { if (!b.refK) { b.refK = k; refStat.pair++; } }   // 組そのもの
+                    else refStat.stale++;
+                } else if (REF.mode === 'dept') { return;
+                } else if (b && !r.k10) {                                        // ベネだけ（河合に相手なし）
+                    if (bOK(b, r)) { b.refNone = true; refStat.bNone++; }
+                } else if (k && !r.b10) {                                        // 河合だけ（ベネに相手なし）
+                    if (kOK(k, r)) { k.refNone = true; refStat.kNone++; }
+                }
+            });
+            refStat.dept = refDept.size;
+        }
+        const kByCode8 = new Map();      // 河合 学科コード(上8桁) -> 河合の行
+        kList.forEach(k => { if (!k.code10) return; const c8 = k.code10.slice(0, 8); if (!kByCode8.has(c8)) kByCode8.set(c8, []); kByCode8.get(c8).push(k); });
+
+        // --- 大学名の対応づけ（ベネ大学名 → 河合の大学キー） ---
+        // 河合側の大学一覧
+        const kUnivs = new Map();   // key -> { name, type }
+        kList.forEach(k => { if (!kUnivs.has(k.key)) kUnivs.set(k.key, { name: k.univ, type: k.type }); });
+        const kByName = new Map(); kList.forEach(k => { if (!kByName.has(k.univ)) kByName.set(k.univ, k.key); });
+
+        const univMap = new Map();  // ベネ大学名 -> 河合key
+        const bUnivs = new Map();   // ベネ大学名 -> type
+        bList.forEach(b => { if (!bUnivs.has(b.univ)) bUnivs.set(b.univ, b.type); });
+
+        // 確認パネルに出す情報
+        const diag = { ambiguous: [], guessed: [], notes: [] };
+        if (!REF.loaded) diag.notes.push('「ref_pairs.csv」（前年度の河合×ベネ対応表）が見つからないため、その表なしで統合しました。学科・方式の対応の精度が下がります。');
+        if (!MODEL.loaded) diag.notes.push('「method_model.csv」（方式名の学習モデル）が見つからないため、私大・短大の方式名は従来の「名前の似かた」で結びました。');
+        if (!kShortKey) diag.notes.push('code.csv に「学科短縮名」の列が見つからないため、河合側の「共」バッジは表示されません。');
+        // 河合の大学名を、表記ゆれを吸収して引く（「名古屋工業」でも「名古屋工業大学」でも可）
+        const kByNorm = new Map(); kList.forEach(k => { const n = ruleKey(k.univ); if (!kByNorm.has(n)) kByNorm.set(n, k.key); });
+        const findKawaiUniv = (name) => kByNorm.has(ruleKey(name)) ? kByNorm.get(ruleKey(name)) : (kUnivs.has(univKey(name)) ? univKey(name) : undefined);
+
+        bUnivs.forEach((bType, bName) => {
+            // (1) 読み替えルール（match_rules.csv の「大学」行）
+            const rule = RULES.univ.get(ruleKey(bName));
+            if (rule) {
+                const kk = findKawaiUniv(rule.kawai);
+                if (kk !== undefined) { univMap.set(bName, kk); return; }
+                // 河合側に見つからないときは、自動判定へ進む（ルールの書き間違いは下で警告）
+            }
+            // (2) 名前が一致（末尾の「大/大学」を除いて同じ）
+            const k = univKey(bName);
+            if (kUnivs.has(k)) { univMap.set(bName, k); return; }
+            // (3) 略称一致: 「旭川医大」→「旭川医科大学」のように部分列で一意に決まるものだけ採用
+            const bNorm = stripSpace(nz(bName));                         // 旧字体・全角半角をそろえて比べる（「国学院北海道短」⇔「國學院大北海道短大部」）
+            if (univKey(bNorm).length < 3) return;
+            const cands = [];
+            kUnivs.forEach((info, key) => {
+                if (info.type !== bType) return;                         // 学校区分が同じ
+                const kn = nz(info.name).replace(/^公立/, '');           // 「公立千歳科学技術」⇔「千歳科学技大」のように、河合側の「公立」は外して比べる
+                if (kn.charAt(0) !== bNorm.charAt(0)) return;            // 先頭1文字が同じ
+                const full = /大学$|短大|大学校$/.test(kn) ? kn : kn + '大学';
+                if (isSubsequence(bNorm, full)) cands.push({ key, len: info.name.length });
+            });
+            if (cands.length === 1) univMap.set(bName, cands[0].key);
+            else if (cands.length > 1) {
+                cands.sort((a, b) => a.len - b.len);
+                const names = cands.map(c => kUnivs.get(c.key).name);
+                if (cands[0].len < cands[1].len) {                       // 一番短い候補が1つだけなら採用
+                    univMap.set(bName, cands[0].key);
+                    diag.guessed.push({ bene: bName, picked: names[0], names });
+                } else diag.ambiguous.push({ bene: bName, names });    // 決められない → ルールで指定してもらう
+            }
+        });
+
+        // --- 行の統合 ---
+        // 同じ「大学・学部・学科」の中で、方式名の似かたを見て 河合の行 ⇔ ベネの行 を対応づける
+        // 学部名・学科名の近さ: 3=一致 / 2=含む / 1=略称（切り詰め）/ 0=別物。記号（／－・など）は無視
+        // 学科名の「最後の区切り以降」だけを取り出す（ベネ「音楽／ジャズ」→「ジャズ」、河合「学校－保健体育」→「保健体育」）
+        const lastSeg = (t) => { const p = nz(t).split(/[\/\-]/); return nameKey(p[p.length - 1]); };
+        // ベネの学科名は河合の学科名の先頭部分に切り詰められていることが多い（「ジャズ」⊂「ジャズ・ポピュラー」）
+        const segScore = (a, b) => {   // a, b は lastSeg 済み
+            if (!a || !b || a.length < 2 || b.length < 2) return 0;
+            if (a === b) return 2.6;
+            const [sh, lg] = a.length <= b.length ? [a, b] : [b, a];
+            if (lg.includes(sh)) return 1.0 + 1.5 * (sh.length / lg.length);   // 含む（長さが近いほど高得点）
+            return 0;
+        };
+        // ベネは「義務－」を「義」、「高等－」を「高」と1文字に略し、さらに6文字で切っている（学校／義音楽・学校／高国語 など）
+        //   → 河合側も同じ略記にそろえ、「ベネの学科名の末尾が河合の学科名の先頭部分と一致するか」で見る
+        const abbrSeg = (rawDept) => lastSeg(nz(rawDept).replace(/義務-/g, '義').replace(/高等-/g, '高'));
+        const MARK = /^[義高]/;
+        const abbrScore = (kAbbr, bSeg) => {   // kAbbr: 河合を略記化した末尾 / bSeg: ベネ学科名の末尾（どちらも lastSeg 済み）
+            if (!kAbbr || !bSeg || bSeg.length < 2) return 0;
+            const km = (kAbbr.match(MARK) || [''])[0], bm = (bSeg.match(MARK) || [''])[0];
+            if (km && bm && km !== bm) return -1;              // 義務 と 高等 の取り違えは別物（高国語 ≠ 義務－国語）
+            if (kAbbr === bSeg) return 4.0;
+            if (kAbbr.startsWith(bSeg)) return 3.0 + 0.8 * (bSeg.length / kAbbr.length);   // 切り詰め（先頭一致）。従来の部分一致より優先
+            return 0;
+        };
+        // ベネの学科名（切り詰め・略称）が河合の学科名の部分列なら、一致し終えた後ろの部分を返す
+        //   例）河合「数物科学（数学選択）」×ベネ「数物科学」→「数学選択」 / 河合「応用化学生物ａ」→「ａ」
+        const abbrTail = (kAbbr, bSeg) => {
+            if (!kAbbr || !bSeg || bSeg.charAt(0) !== kAbbr.charAt(0)) return null;
+            let i = 0;
+            for (let j = 0; j < kAbbr.length; j++) {
+                if (kAbbr[j] === bSeg[i]) { i++; if (i === bSeg.length) return kAbbr.slice(j + 1); }
+            }
+            return null;
+        };
+        // ベネの方式名（数学・数理・ａ・文系ａ など）が、その後ろの部分の文字だけでできているか（順序は問わない・重複は数える）
+        //   例）「文系ａ」→河合「学ａ文系」 / 「数理」→「数学理科選択」。長さが近いほど高得点
+        const tailMatch = (wk, tail) => {
+            if (!wk || !tail) return 0;
+            // 同じ文字は使った分だけ消費する（「Ⅱ」=ii が「Ⅰ」=i に当たらないように）
+            let rest = tail;
+            for (const c of wk) { const i = rest.indexOf(c); if (i < 0) return 0; rest = rest.slice(0, i) + rest.slice(i + 1); }
+            return 0.5 + 0.4 * Math.min(1, wk.length / tail.length);
+        };
+        // 括弧書き・「学類/学科」などを外した学科の基本名（河合「医（一般枠）」「学校教育（共同教員養成）Ａ」⇔ベネ「医学類」「学校教育学類」）
+        const deptBase = (t) => {
+            let x = nz(t).replace(/[（(【\[][^）)】\]]*[）)】\]]/g, '');
+            const q = x.split(/[\/\-]/); x = q[q.length - 1];
+            x = nameKey(x).replace(/(学類|学科|学域|学系|コース|専攻|課程)$/, '').replace(/^(.{2,})[a-c]$/, '$1');
+            return x;
+        };
+        // 昼間/夜間（第２部）の区別。片方だけ夜間・第２部なら別の学部として扱う（外国語２＝外国語（第２部）、教育夜＝教育（夜間主））
+        const facClass = (raw) => /夜|第?[2二]部|[^0-9]2$/.test(nz(raw)) ? 'N' : '';
+        // 方式名の語尾（系・型・方式…）は比べる対象から外す（「国語系」⇔「国語」「理系型」⇔「理系」）
+        const GEN = /[系型]|方式|コース|入試|選抜|タイプ/g;
+        const bag = (a, t) => {   // a の文字のうち t に（重複を数えて）含まれる割合
+            if (!a) return 0;
+            let rest = t, n = 0;
+            for (const c of a) { const i = rest.indexOf(c); if (i >= 0) { n++; rest = rest.slice(0, i) + rest.slice(i + 1); } }
+            return n / a.length;
+        };
+        // 英数字だけの方式名（Ⅰ=i, Ⅱ=ii, Ａ=a …）は「前後が英数字でない」ときだけ含まれているとみなす（「i」が「ii」に当たらないように）
+        const hasTok = (hk, w) => {
+            if (!w) return false;
+            if (!/^[a-z0-9]+$/.test(w)) return hk.includes(w);
+            return new RegExp('(^|[^a-z0-9])' + w + '($|[^a-z0-9])').test(hk);
+        };
+        // 河合の学科名の括弧書き（「（物）」「（理系）」「（島根県地域枠）」）
+        const deptQual = (raw) => { const m = String(raw || '').match(/[（(【]([^）)】]*)[）)】]/); return m ? nameKey(m[1]) : ''; };
+        const nameScore = (a, b) => {   // a, b は nameKey 済みの文字列
+            if (!a && !b) return 3;
+            if (!a || !b) return 0;
+            if (a === b) return 3;
+            const [sh, lg] = a.length <= b.length ? [a, b] : [b, a];
+            if (sh.length === 1 && !lg.startsWith(sh)) return 0;             // 1文字だけの一致は先頭のときだけ（「理」と「総合理系」は別物）
+            if (lg.includes(sh)) return 1.5 + 1.4 * (sh.length / lg.length);   // 含む（長さが近いほど高得点。上限は一致の3未満）
+            if (sh.length >= 3 && sh.charAt(0) === lg.charAt(0) && isSubsequence(sh, lg)) return 1;
+            return 0;
+        };
+
+        // 方式名の正規化: 全角→半角、余計な語を除去
+        const methodNorm = (t) => nz(t).replace(/[\s　]+/g, '').replace(/教科|科目|方式|入試|日程|型|全学統一|選抜/g, '')
+            .replace(/^(前|後|中)(?=[a-z0-9])/, '$1期');   // ベネの略称「前Ａ」を「前期Ａ」と読み替え
+        const bigrams = (t) => {
+            if (t.length === 0) return [];
+            if (t.length === 1) return [t];
+            const r = []; for (let i = 0; i < t.length - 1; i++) r.push(t.substr(i, 2)); return r;
+        };
+        const SCHED_FULL = { '前': '前期', '後': '後期', '中': '中期' };
+        // 日程が合うか（前・後・中・共・一般を厳密に区別。国公立の「独自」は 河合N ⇔ ベネ独 or 空 を許可）
+        const schedCompat = (a, b) => a === b || (a === '独' && b === '') || (a === '' && b === '独');
+        const schedClash = (a, b) => !schedCompat(a, b);
+        // 私大などで、河合が「前期」なのにベネが「後」（またはその逆）の食い違いは別物として扱う
+        //   ただしベネ側にＢ日程（前期Ｂなど）とあるときは「2回目の日程の呼び名の違い」の可能性があるので結び付ける
+        const onlyZen = (t) => t.includes('前') && !t.includes('後');
+        const onlyGo  = (t) => t.includes('後') && !t.includes('前');
+        function textClash(k, b) {
+            if (k.type === '1' || k.type === '2') return false;          // 国公立は日程コードで厳密に対応づけ済み
+            const bl = b.method.replace(/^共\s*/, '');
+            if (/[ＢB]/.test(bl)) return false;                           // Ｂ日程は許可
+            return (onlyZen(k.method) && onlyGo(bl)) || (onlyGo(k.method) && onlyZen(bl));
+        }
+        // 方式名の類似度: 完全一致=2、共通する2文字連続の割合(0.5以上)=その値、それ以外=0
+        function methodScore(kKey, bKey) {
+            if (!kKey || !bKey) return 0;
+            if (kKey === bKey) return 2;
+            const kb = new Set(bigrams(kKey)), bb = bigrams(bKey);
+            let common = 0; bb.forEach(g => { if (kb.has(g)) common++; });
+            const sc = common / Math.min(kb.size, bb.length);
+            return sc >= 0.5 ? sc : 0;
+        }
+
+        const merged = new Map();
+        kList.forEach(k => {
+            merged.set(k.id, {
+                id: k.id, univ: k.univ, univAlt: '', fac: k.rawFac, dept: k.rawDept,
+                method: k.method, type: k.type, sched: k.sched, kyo: k.kyo, kawaiCode: k.codeKawai5, k10: k.code10 || '', beneCodes: []
+            });
+            k.mKey = methodNorm(k.method);
+        });
+
+        // 河合の行を「大学key|学部|学科」でグループ化
+        const kGroups = new Map();      // gid -> { rows: [], b: [] }
+        const kByUniv = new Map();      // 大学key -> [kawai rows]
+        kList.forEach(k => {
+            k.gid = `${k.key}|${k.fac}|${k.dept}`;
+            if (!kGroups.has(k.gid)) kGroups.set(k.gid, { rows: [], b: [] });
+            kGroups.get(k.gid).rows.push(k);
+            if (!kByUniv.has(k.key)) kByUniv.set(k.key, []);
+            kByUniv.get(k.key).push(k);
+        });
+
+        // ベネの行を、学部・学科が合う河合グループへ振り分け（完全一致を優先）
+        let beneOnly = [];
+        bList.forEach(b => {
+            const wayOnly = b.method.replace(/^[^ ]*\s?/, '');          // 「前 数学」→「数学」
+            // 読み替えルール（方式）: 「共 プラＡ」→「共通テスト＋Ａ」。日程つきの全体 → 方式部分だけ の順に試す
+            let mr = RULES.method.apply(b.method, b.univ);
+            if (!mr.hit) mr = RULES.method.apply(wayOnly, b.univ);
+            b.way = wayOnly;
+            b.mlText = mr.scoped ? mr.text : wayOnly;   // 方式名の点数づけに使うベネの方式名（「対象大学」つきの読み替えルールがあるときだけ、読み替え後。全大学共通のルールはモデルが学習済みなので使わない）
+            b.mx = mr.hit ? mr.text : '';       // ルールで読み替えたあとの方式名（「共プラス」→「共通テスト＋」）。確からしさの判定に使う
+            b.ruled = !!mr.scoped;   // 「対象大学」つきのルールで方式名の意味が決まった行（仕上げの段階で、無関係な行と結ばないための目印。全大学共通のルールは推測を含むので対象外）
+            b.mKey = (mr.hit ? methodNorm(mr.text) : methodNorm(wayOnly)) || (SCHED_FULL[b.sched] || '');
+            const kKey = univMap.get(b.univ);
+            b.fk = nameKey(b.fac); b.dk = nameKey(b.dept); b.dl = lastSeg(b.mDept); b.db = deptBase(b.mDept);
+            // 手動対応表に載っているキャンパス別の大学（北教大札幌校 など）は、河合の学部名（教育札幌校）に同じキャンパス名があるものだけが対象
+            //   （ルールで河合の大学に結んだ大学のうち「○○校」で終わるものだけ。「大学校」は対象外）
+            b.campus = RULES.univ.has(ruleKey(b.univ)) ? ((nameKey(b.univ).match(/(.[^学]校)$/) || [])[1] || '') : '';
+            b.wk = mr.hit ? nameKey(mr.text) : nameKey(wayOnly);   // ベネの方式名（日程を除いた部分。ルールがあれば読み替え後）
+            let pick = null, best = 0;
+            // 前年度表（ref_pairs.csv）: ①昨年の組があればその河合の行 ②学科の対応があればその河合の学科の行（日程が合うもの）。名前の似かたによる推測より優先
+            if (b.refK) pick = b.refK;
+            else if (!b.refNone && b.type !== '1' && b.type !== '2') {
+                const am = refDept.get(b.b10.slice(0, 8));
+                if (am) {
+                    const c8s = [...am.entries()].sort((x, y) => y[1] - x[1]).map(x => x[0]);
+                    for (const c8 of c8s) {
+                        const cand = (kByCode8.get(c8) || []).filter(k => !schedClash(k.sched, b.sched) && !k.refNone);
+                        if (cand.length) { pick = cand.find(k => k.sched === b.sched) || cand[0]; b.deptAnchored = true; break; }
+                    }
+                }
+            }
+            if (!pick && !b.refNone && kKey !== undefined) {
+                (kByUniv.get(kKey) || []).forEach(k => {
+                    if (schedClash(k.sched, b.sched)) return;                                    // 日程（前/後/共…）が合わない行は対象外
+                    if (k.fk === undefined) { k.fk = nameKey(k.fac); k.dk = nameKey(k.dept); k.dl = lastSeg(k.rawDept); }   // 河合側は初回のみ計算
+                    if (b.campus && !k.fk.includes(b.campus)) return;                           // 別キャンパスの行には結び付けない
+                    if (facClass(k.rawFac) !== facClass(b.mFac)) return;                         // 昼間と夜間（第２部）は取り違えない
+                    const fs = nameScore(k.fk, b.fk);
+                    if (fs === 0) return;
+                    if (k.da === undefined) k.da = abbrSeg(k.rawDept);
+                    if (k.db === undefined) k.db = deptBase(k.rawDept);
+                    const as = abbrScore(k.da, lastSeg(b.mDept));
+                    if (as < 0) return;                                                          // 義務/高等が食い違う行は対象外
+                    let ds = as > 0 ? as : Math.max(nameScore(k.dk, b.dk), segScore(k.dl, b.dl));
+                    // ベネの学科名が空で、方式欄に重点・コース名が入っている場合（北大「総合理系 / 前 数学」→河合「数学重点」）
+                    if (ds === 0 && !b.dk && b.wk && k.dk && k.dk.startsWith(b.wk)) ds = 2.0 + 0.8 * (b.wk.length / k.dk.length);
+                    // 略称（「保体中」⊂「教科－保健体育（中）」、「イベラ」⊂「イベリア／ラテンアメリカ」）: 先頭の文字が同じで、文字が順番どおりに含まれる場合だけ、弱い点で候補にする
+                    if (ds === 0 && b.dl.length >= 3) {
+                        if (k.dfull === undefined) k.dfull = nameKey(k.rawDept);
+                        if ((k.dl.charAt(0) === b.dl.charAt(0) || k.dfull.charAt(0) === b.dl.charAt(0)) && isSubsequence(b.dl, k.dfull)) ds = 1.0 + 0.9 * Math.min(1, b.dl.length / k.dfull.length);
+                    }
+                    // 括弧書き・「学類」を外した学科名が同じなら同じ学科（枠・方式の違いは下のボーナスで選ぶ）
+                    if (ds < 2.8 && k.db && b.db && k.db === b.db) ds = 2.8;
+                    // ベネでは方式欄にある名前（文系型・音楽…）が、河合では学科名や括弧書きになっている（滋賀「学校教育 / 前 文系型」→「学校－文系型」「学校－実技型（音楽）」）
+                    if (ds === 0 && b.wk) {
+                        if (k.dq === undefined) k.dq = deptQual(k.rawDept);
+                        const wc0 = b.wk.replace(GEN, ''), kl = k.dl.replace(GEN, '');
+                        if (wc0.length >= 2 && (kl === wc0 || (k.dq && isSubsequence(wc0, k.dq.replace(GEN, ''))))) ds = 2.0;
+                    }
+                    if (ds === 0) return;
+                    // 同点のときの決め手: ベネの方式名（地域枠など）が河合の学科名・方式名に入っているか
+                    //   例）ベネ「医 / 地域枠」→ 河合「医（地域枠）」。方式名が空なら「一般」を含む方を優先
+                    if (k.hk === undefined) k.hk = nameKey(k.rawDept + k.method);
+                    let bonus = 0;
+                    const tm = tailMatch(b.wk, abbrTail(k.da, b.dl));   // 河合の学科名の末尾（選択科目・ａｂ・文理）とベネの方式名の照合
+                    if (tm > 0) bonus = tm;
+                    else if (b.wk) {
+                        const wc = b.wk.replace(GEN, '');   // 「国語系」→「国語」
+                        if (hasTok(k.hk, b.wk) || (wc && hasTok(k.hk, wc))) bonus = 0.5;
+                        else bonus = 0.3 * bag(wc || b.wk, k.hk);   // 一部だけ合う（「数学」⇔「（数）」「茨城県」⇔「茨城」）
+                        if (bonus === 0) bonus = -0.5;               // 方式名があるのに河合側に手がかりがない行は、手がかりのある行に負ける
+                    }
+                    else if (k.hk.includes('一般')) bonus = 0.25;
+                    else if (/[（(【]/.test(k.rawDept)) bonus = -0.3;      // ベネに方式名がなければ、枠・方式の括弧書きが付いていない行を優先
+                    // 河合の括弧書き（「（物）」「（理系）」）が、ベネの方式名（「Ⅰ物理」「理系型」）の頭に当たる
+                    if (b.wk) {
+                        if (k.dq === undefined) k.dq = deptQual(k.rawDept);
+                        const w2 = b.wk.replace(/^[ⅰ-ⅹivx0-9]+/, '').replace(GEN, '');
+                        if (k.dq && w2) { if (w2.startsWith(k.dq.replace(GEN, ''))) bonus += 0.4; else if (w2.includes(k.dq.replace(GEN, ''))) bonus += 0.1; }
+                    }
+                    // ベネの学科名が「A／B」の形なら、A・Bそれぞれが河合の学科名に含まれるものを優先（京都工芸繊維「生物／地域創」→「応用生物学（地域創生）」）
+                    {
+                        const sg = nz(b.mDept).split(/[\/\-]/).map(nameKey).filter(x => x.length >= 2);
+                        if (sg.length >= 2) { if (k.dfull === undefined) k.dfull = nameKey(k.rawDept); sg.forEach(x => { if (isSubsequence(x, k.dfull)) bonus += 0.5; }); }
+                    }
+                    if (fs + ds + bonus > best) { best = fs + ds + bonus; pick = k; }   // 一番近い学部・学科を採用
+                });
+            }
+            if (pick) kGroups.get(pick.gid).b.push(b);
+            else {
+                // 学科までは合わなくても、学部名が河合と対応づくなら学部名だけ河合に合わせる
+                let facRef = null, fbest = 0;
+                if (kKey !== undefined) (kByUniv.get(kKey) || []).forEach(k => {
+                    if (b.campus && !k.fk.includes(b.campus)) return;
+                    const f = nameScore(k.fk !== undefined ? k.fk : nameKey(k.fac), b.fk);
+                    if (f > fbest) { fbest = f; facRef = { fac: k.rawFac }; }
+                });
+                beneOnly.push(toBeneOnly(b, facRef));
+            }
+        });
+
+        function toBeneOnly(b, ref) {
+            // 大学が河合と対応づいているなら、河合の大学名で表示（略称との二重表示を防ぐ）
+            const kk = univMap.get(b.univ);
+            const ki = kk !== undefined ? kUnivs.get(kk) : null;
+            // 学部・学科も河合と対応づいているなら、河合の名前で表示（「生命医科」→「生命医科学」「リハビリ」→「リハビリテーション」）
+            const facName  = ref && ref.fac  ? ref.fac  : b.rawFac;
+            const deptName = ref && ref.dept ? ref.dept : b.rawDept;
+            return {
+                id: b.id, univ: ki ? ki.name : b.univ, univAlt: ki ? b.univ : '',
+                fac: facName, dept: deptName,
+                method: b.method, type: ki ? ki.type : b.type, sched: b.sched, kawaiCode: '',
+                beneCodes: [Object.assign({ code: b.codeBene, label: '' }, bInfo(b))],
+                _b: b
+            };
+        }
+        const attach = (k, b, byRef) => {
+            const m = merged.get(k.id);
+            const e = Object.assign({ code: b.codeBene, label: b.method.trim() }, bInfo(b));
+            if (byRef) e.ref = true;                                   // 前年度の表と同じ組（確定）
+            Object.defineProperty(e, '_b', { value: b, enumerable: false, writable: true });   // 後の見直し用（localStorage には保存しない）
+            m.beneCodes.push(e);
+            if (!m.univAlt) m.univAlt = b.univ;
+            return e;
+        };
+
+        kGroups.forEach(g0 => {
+            const ref0 = g0.rows[0];
+            const g = { rows: g0.rows.filter(k => !k.refNone), b: g0.b };      // 昨年の表で「ベネに相手なし」だった河合の行は、結びつけの対象から外す
+            const unassigned = new Set(g.b);
+            const used = new Set();            // すでにコードが付いた河合の行
+
+            // (0) 前年度の表で組が決まっているもの（名前が昨年と同じ）は、そのまま確定
+            g.b.forEach(b => { if (b.refK && g.rows.includes(b.refK)) { attach(b.refK, b, true); unassigned.delete(b); used.add(b.refK); } });
+
+            // 私大・短大: 学習した点数（method_model.csv）で、学科の中の方式を全体として一番よく合うように結ぶ（国公立は従来の方法）
+            const useML = MODEL.loaded && ref0.type !== '1' && ref0.type !== '2';
+            if (useML) {
+                const res = mlAssign([...unassigned], g.rows, (b) => b.mlText, schedClash, used);
+                const nAssigned = res.length + (g.b.length - unassigned.size);
+                const full = g.rows.length === g.b.length && nAssigned === g.b.length;          // 河合・ベネの行数が同じで全部結べた → 消去法でも裏づけられる
+                res.forEach(r => {
+                    const e = attach(r.k, r.b);
+                    e.ml = true;
+                    const sure = r.score >= 3 || (full && r.score >= 0);
+                    e.est = !sure;
+                    e.why = sure ? '' : `方式名の似かたから推定した対応です（点数 ${r.score.toFixed(1)}。3以上なら確実）`;
+                    unassigned.delete(r.b); used.add(r.k);
+                });
+            } else {
+            // (1) 方式名が似ているもの同士を、点数の高い順に1対1で対応づけ
+            const pairs = [];
+            g.rows.forEach(k => g.b.forEach(b => {
+                if (schedClash(k.sched, b.sched) || textClash(k, b)) return;
+                let sc = methodScore(k.mKey, b.mKey);
+                // 略称（3文字程度に切り詰められた方式名）: 「統一３」⊂「全学統一３科目」のように部分列なら低めの点で候補にする
+                if (sc === 0) {
+                    if (k.mRaw === undefined) k.mRaw = nameKey(k.method);
+                    if (b.wk && b.wk.length >= 3 && isSubsequence(b.wk, k.mRaw)) sc = 0.6;
+                }
+                if (sc > 0) pairs.push({ k, b, sc });
+            }));
+            pairs.sort((x, y) => y.sc - x.sc);
+            pairs.forEach(p => {
+                if (!unassigned.has(p.b) || used.has(p.k)) return;
+                attach(p.k, p.b); unassigned.delete(p.b); used.add(p.k);
+            });
+
+            // (1b) 方式名が（略称を直せば）ほぼ一致する残りは、同じ河合の行へまとめる（例: 前ＡⅠ・前ＡⅡ → 前期Ａ方式）
+            [...unassigned].forEach(b => {
+                let top = null, topSc = 0, tie = false;
+                g.rows.forEach(k => {
+                    if (schedClash(k.sched, b.sched) || textClash(k, b)) return;
+                    const sc = methodScore(k.mKey, b.mKey);
+                    if (sc > topSc) { top = k; topSc = sc; tie = false; } else if (sc === topSc && sc > 0) tie = true;
+                });
+                if (top && topSc >= 0.66 && !tie) { attach(top, b); unassigned.delete(b); used.add(top); }
+            });
+
+            // (2) 前期/後期/中期 が同じなら、方式の細かい違い（前 数学/前 数理 など）は同じ河合の行へまとめる
+            [...unassigned].forEach(b => {
+                if (!['前','後','中'].includes(b.sched)) return;
+                const k = g.rows.find(r => r.sched === b.sched);
+                if (k) { attach(k, b); unassigned.delete(b); used.add(k); }
+            });
+
+            // (3) 同じ日程（一般・共通テスト利用・前期…）で、双方の残りがちょうど1行ずつなら対応づける
+            ['', '共', '独', '前', '後', '中'].forEach(sc => {
+                const bs = [...unassigned].filter(b => b.sched === sc);
+                const ks = g.rows.filter(r => !used.has(r) && r.sched === sc);
+                if (bs.length === 1 && ks.length === 1 && !textClash(ks[0], bs[0])) { attach(ks[0], bs[0]); unassigned.delete(bs[0]); used.add(ks[0]); return; }
+                // 河合に「方式名なし」の行が1つだけあり、ベネも方式名なしなら、その行へ（「二次」など別方式の行は対象外）
+                if (bs.length === 1 && bs[0].mKey === '') {
+                    const blank = ks.filter(r => r.mKey === '');
+                    if (blank.length === 1) { attach(blank[0], bs[0]); unassigned.delete(bs[0]); used.add(blank[0]); }
+                }
+            });
+
+            }   // ← 私大・短大の新方式 / 国公立の従来方式 の分かれ目ここまで
+
+            // 残りは「ベネのみ」の別行（無理に結び付けない）
+            unassigned.forEach(b => beneOnly.push(toBeneOnly(b, { fac: ref0.rawFac, dept: ref0.rawDept })));
+        });
+
+        // ================= 仕上げ: 河合にもベネにも残った行同士を、名前の似かただけで結ぶ =================
+        //  コード番号は一切使わない（来年度コードが変わっても同じルールで動く）。
+        //  (A) 文字の含まれかた（略称・順序つき部分列・系/型を除いた一致）で似ているものを、似ている順に1対1で結ぶ
+        //  (B) それでも残り、同じ大学・学部・日程で河合とベネの件数がぴったり同じなら、コード順に結ぶ（国公立のみ・「推定」と表示）
+        {
+            let kLeft = kList.filter(k => merged.get(k.id).beneCodes.length === 0 && !k.refNone);
+            const bLeft = beneOnly.filter(x => x._b && univMap.has(x._b.univ) && !x._b.refNone && !(MODEL.loaded && x._b.deptAnchored && x._b.type !== '1' && x._b.type !== '2')).map(x => x._b);
+            const consumed = new Set();
+            const prep = (k) => {
+                if (k.fk === undefined) { k.fk = nameKey(k.fac); k.dk = nameKey(k.dept); k.dl = lastSeg(k.rawDept); }
+                if (k.hk === undefined) k.hk = nameKey(k.rawDept + k.method);
+                if (k.dfull === undefined) k.dfull = nameKey(k.rawDept);
+                if (k.ffull === undefined) k.ffull = nameKey(k.rawFac + k.rawDept);
+            };
+            const compat = (k, b) => {          // 日程・キャンパス・昼夜・学部名が合うか → 学部の近さ（0なら不可）
+                if (univMap.get(b.univ) !== k.key) return 0;
+                if (schedClash(k.sched, b.sched) || textClash(k, b)) return 0;
+                prep(k);
+                if (b.campus && !k.fk.includes(b.campus)) return 0;
+                if (facClass(k.rawFac) !== facClass(b.mFac)) return 0;
+                let fs = nameScore(k.fk, b.fk);
+                if (fs === 0 && b.fk.length >= 3 && b.fk.charAt(0) === k.ffull.charAt(0) && isSubsequence(b.fk, k.ffull)) fs = 1;   // 「総合理Ⅲ」⊂「総合選抜＋理系Ⅲ」
+                return fs;
+            };
+            // 方式名に含まれる数字（「Ｃ方式４教科」⇔「前期４」の 4）。合えば加点、食い違えば減点（同点のとき数字で正しい相手を選ぶ）
+            const numsOf = (t) => new Set(nz(t).match(/\d+/g) || []);
+            const numsCached = (o) => { if (o.nums === undefined) o.nums = numsOf(o.method); return o.nums; };
+            const numAdj = (k, b) => {
+                const kn = numsCached(k), bn = numsCached(b);
+                if (!kn.size || !bn.size) return 0;                    // どちらかに数字がなければ判断しない
+                return [...bn].some(n => kn.has(n)) ? 1 : -1;
+            };
+            const textScore = (k, b) => {       // 学科名・方式名の似かた（0なら根拠なし）
+                const kd = k.hk, dl = lastSeg(b.mDept), wk = b.wk.replace(GEN, '');
+                let ts = 0;
+                // 地域名の略称（辞書）: ベネ「言文／中欧」の「中欧」が、河合の言語名（ポーランド語・チェコ語）に当たる
+                for (const x of nz(b.mDept).split(/[\/\-]/).map(nameKey)) {
+                    const ws = RULES.region.get(x);
+                    if (ws && ws.some(w => kd.includes(nameKey(w)))) return 3;
+                }
+                // ベネ「デザ／一般プ」「化学／一般プ」: 「／」で区切った前半が河合の学科名（略称）、後半が河合の括弧書き（（一般）（地域創生））の頭に当たる
+                const sg = nz(b.mDept).split(/[\/\-]/).map(nameKey).filter(x => x.length >= 2);
+                if (sg.length >= 2) {
+                    if (k.db === undefined) k.db = deptBase(k.rawDept);
+                    if (k.dq === undefined) k.dq = deptQual(k.rawDept);
+                    sg.forEach((x, i) => {
+                        if (i < sg.length - 1) { if (isSubsequence(x, kd)) ts += 1 + (k.db && k.db.startsWith(x) ? 0.5 : 0); }                 // 前半（学科の略称）。河合の学科名の頭と合えば加点
+                        else if (k.dq && k.dq.length >= 2 && x.startsWith(k.dq)) ts += 1;                                                    // 後半（方式）。「一般プ」⊃「一般」
+                    });
+                    if (ts >= 2) return ts;
+                    ts = 0;
+                }
+                if (dl.length >= 2 && isSubsequence(dl, kd)) ts += 1 + Math.min(1, dl.length / kd.length);
+                if (wk.length >= 2 && isSubsequence(wk, kd)) ts += 1 + Math.min(1, wk.length / kd.length);
+                else if (wk.length >= 2 && bag(wk, kd) >= 0.6) ts += bag(wk, kd);                  // 「Ａ数外」⇔「Ａ方式（英・数）」「Ⅰ化学」⇔「理Ⅰ（化）」
+                else if (/^[a-z]$/.test(wk) && kd.includes(wk)) ts += 1;                            // 「Ａ」⇔「Ａ方式」
+                if (ts === 0 && !b.dl && !b.wk && b.fk.length >= 3 && isSubsequence(b.fk, k.ffull) && nameScore(k.fk, b.fk) === 0) ts = 1 + Math.min(1, b.fk.length / k.ffull.length);   // 学部名が「河合の学部＋学科」にまたがる場合
+                return ts;
+            };
+            // (0) 多重対応の解消: 河合の1行にベネのコードが2つ以上付いていて、その行の名前に合わないコードがあり、
+            //     同じ大学・学部・日程に「まだコードのない河合の行」があれば、そちらのほうが合うコードを移す
+            //     （大阪教育「情報＋小学校」と「情報＋中高数学」、山口「建築Ⅰ」と「建築Ⅱ」、滋賀「面接型」と「文系型・理系型」など）
+            {
+                const sibKey = (k) => `${k.key}|${k.rawFac}|${k.sched}`;
+                const sibs = new Map();
+                kList.forEach(k => { const key = sibKey(k); if (!sibs.has(key)) sibs.set(key, []); sibs.get(key).push(k); });
+                const wayScore = (k, b) => {       // ベネの方式名が河合の名前に出てくるか（方式名なしは中立 0.5）
+                    prep(k);
+                    const w = b.wk || ''; if (!w) return 0.5;
+                    const wc = w.replace(GEN, '');
+                    if (hasTok(k.hk, w) || (wc && hasTok(k.hk, wc))) return 1;
+                    return /^[a-z0-9]+$/.test(wc || w) ? 0 : bag(wc || w, k.hk);
+                };
+                const deptScore = (k, b) => {      // ベネの学科名の文字が河合の学科名・学部名にどれだけ含まれるか
+                    prep(k);
+                    const d = nameKey(b.mDept); if (!d) return 0.5;
+                    let ex = 0;   // 「デザ／地域創」の前半（デザ）が、河合の学科名の頭（デザイン）と合えば加点 → 同点の決め手
+                    const sg = nz(b.mDept).split(/[\/\-]/).map(nameKey).filter(x => x.length >= 2);
+                    if (sg.length >= 2) { if (k.db === undefined) k.db = deptBase(k.rawDept); sg.slice(0, -1).forEach(x => { if (k.db && k.db.startsWith(x)) ex += 0.5; }); }
+                    return bag(d, k.dfull || k.fk) + ex;   // 学部名は混ぜない（「医」が学部名に入っているだけで一致してしまうため）
+                };
+                const fit = (k, b) => wayScore(k, b) + deptScore(k, b);
+                kList.forEach(k0 => {
+                    const m = merged.get(k0.id);
+                    if (m.beneCodes.length < 2 || m.beneCodes.some(e => !e._b)) return;
+                    const free = (sibs.get(sibKey(k0)) || []).filter(s => s !== k0 && merged.get(s.id).beneCodes.length === 0);
+                    if (!free.length) return;
+                    const top = Math.max(...m.beneCodes.map(e => fit(k0, e._b)));
+                    [...m.beneCodes].forEach(e => {
+                        if (e.ref) return;                                              // 昨年の表と同じ組は動かさない
+                        const cur = fit(k0, e._b);
+                        if (cur >= top - 1e-9) return;                                  // その行に一番合うコードは動かさない
+                        let best = null, bs = -1;
+                        free.forEach(s => {
+                            if (merged.get(s.id).beneCodes.length) return;               // すでに誰かが入った行には入れない
+                            if (facClass(s.rawFac) !== facClass(e._b.mFac) || textClash(s, e._b)) return;
+                            const ws = wayScore(s, e._b), ds = deptScore(s, e._b);
+                            if (e._b.wk && ws < 0.3) return;
+                            if (ds < 0.5) return;
+                            if (ws + ds >= cur - 1e-9 && ws + ds > bs) { bs = ws + ds; best = s; }
+                        });
+                        if (!best) {
+                            // 行き先がなく、その行の名前にも方式名の手がかりがない（鳥取「医／医 兵庫枠」が「医（一般枠）」に付いていた等）→ 無理に付けず、ベネのみに戻す
+                            if ((k0.type === '1' || k0.type === '2') && e._b.wk && wayScore(k0, e._b) < 0.34) {
+                                m.beneCodes.splice(m.beneCodes.indexOf(e), 1);
+                                beneOnly.push(toBeneOnly(e._b, { fac: k0.rawFac }));
+                                bLeft.push(e._b);
+                            }
+                            return;
+                        }
+                        m.beneCodes.splice(m.beneCodes.indexOf(e), 1);
+                        const m2 = merged.get(best.id);
+                        m2.beneCodes.push(e); if (!m2.univAlt) m2.univAlt = e._b.univ;
+                    });
+                });
+            }
+            kLeft = kList.filter(k => merged.get(k.id).beneCodes.length === 0 && !k.refNone);   // 組み替えで埋まった行を、空き行から外す
+            // (A) 似ている順に1対1
+            const pairs = [];
+            kLeft.forEach(k => bLeft.forEach(b => {
+                const fs = compat(k, b); if (!fs) return;
+                // ルールで方式名が決まっているベネの行は、同じ方式名の河合の行としか結ばない
+                //   （似た行が無いときに、「桐門の翼奨学金」など無関係な行へ当てずっぽうで結ぶのを防ぐ）
+                if (b.ruled && methodScore(k.mKey, b.mKey) < 2) return;
+                let ts = textScore(k, b), numOnly = false;
+                if (!ts) {
+                    // 名前の似かたの手がかりがなくても、学科名が同じで方式名の数字（「Ｃ方式３教科」⇔「前期３」の 3）が合えば、弱い根拠として候補にする
+                    //   （学科名が「法」など1文字で文字の照合ができない場合など。点は低いので、文字の根拠がある組が先に結ばれる。必ず「推定」表示）
+                    if (numAdj(k, b) > 0 && nameScore(k.dk, b.dk) > 0) { ts = 0.8; numOnly = true; }
+                    else return;
+                }
+                pairs.push({ k, b, sc: fs + ts + numAdj(k, b), numOnly });
+            }));
+            pairs.sort((x, y) => y.sc - x.sc);
+            const usedK = new Set();
+            const link = (k, b, est) => {
+                const m = merged.get(k.id);
+                m.beneCodes.push(Object.assign({ code: b.codeBene, label: b.method.trim(), est: !!est }, bInfo(b)));
+                if (!m.univAlt) m.univAlt = b.univ;
+                usedK.add(k); consumed.add(b);
+            };
+            pairs.forEach(p => { if (usedK.has(p.k) || consumed.has(p.b)) return; link(p.k, p.b, p.numOnly || (p.k.type !== '1' && p.k.type !== '2')); });   // 私大・短大は方式名の裏づけが弱いことがあるので「推定」と表示
+            // (B) 件数が同じなら順番に（国公立のみ）
+            const bucket = new Map();
+            const bs0 = bLeft.filter(b => !consumed.has(b)), ks0 = kLeft.filter(k => !usedK.has(k));
+            bs0.forEach(b => {
+                let top = null, topF = 0;
+                ks0.forEach(k => { const f = compat(k, b); if (f > topF) { topF = f; top = k; } });
+                if (!top || (top.type !== '1' && top.type !== '2')) return;
+                const key = `${top.key}|${top.rawFac}|${top.sched}`;
+                if (!bucket.has(key)) bucket.set(key, { ks: [], bs: [] });
+                bucket.get(key).bs.push(b);
+            });
+            bucket.forEach((v, key) => {
+                const [ukey, fac, sch] = key.split('|');
+                v.ks = ks0.filter(k => k.key === ukey && k.rawFac === fac && String(k.sched) === sch);
+                if (v.ks.length !== v.bs.length || v.ks.length > 8) return;
+                // 方式名の数字（科目数など）が全部そろっていて1対1に決まるなら、その数字で結ぶ。決まらなければコード順
+                const nk = (o) => [...numsCached(o)].sort().join(',');
+                const kKeys = v.ks.map(nk), bKeys = v.bs.map(nk);
+                const uniq = (a) => a.every(x => x) && new Set(a).size === a.length;
+                if (uniq(kKeys) && uniq(bKeys) && kKeys.every(x => bKeys.includes(x))) {
+                    v.ks.forEach((k, i) => link(k, v.bs[bKeys.indexOf(kKeys[i])], true));
+                    return;
+                }
+                v.ks.sort((a, b) => Number(a.codeKawai5) - Number(b.codeKawai5));
+                v.bs.sort((a, b) => a.codeBene.localeCompare(b.codeBene));
+                v.ks.forEach((k, i) => link(k, v.bs[i], true));
+            });
+            // (D) 粒度の違い（国公立のみ）: ベネのコードが河合より粗いとき
+            //   D1) 同じ大学・学部・日程で、ベネの残りが1件・河合の残りが2件以上 → 河合の全行に「共有（推定）」で付ける（福島「後期」）
+            //   D2) ベネの残りが「文系」「理系」の2件だけなら、河合の学科名に 数学・理科・物理… があるものを理系、他を文系として付ける（福島「前期」）
+            {
+                const kRem = kList.filter(k => merged.get(k.id).beneCodes.length === 0 && (k.type === '1' || k.type === '2'));
+                const bRem = bLeft.filter(b => !consumed.has(b));
+                const bk = new Map();
+                bRem.forEach(b => {
+                    let top = null, topF = 0;
+                    kRem.forEach(k => { const f = compat(k, b); if (f > topF) { topF = f; top = k; } });
+                    if (!top) return;
+                    const key = `${top.key}|${top.rawFac}|${top.sched}`;
+                    if (!bk.has(key)) bk.set(key, []);
+                    bk.get(key).push(b);
+                });
+                const RIKEI = /数学|算数|理科|物理|化学|生物|地学|工学|技術|情報|科学/;
+                const share = (k, b) => {
+                    const m = merged.get(k.id);
+                    const e = Object.assign({ code: b.codeBene, label: b.method.trim(), est: true, shared: true }, bInfo(b));
+                    m.beneCodes.push(e); if (!m.univAlt) m.univAlt = b.univ; consumed.add(b);
+                };
+                bk.forEach((bs, key) => {
+                    const [ukey, fac, sch] = key.split('|');
+                    const ks = kRem.filter(k => k.key === ukey && k.rawFac === fac && String(k.sched) === sch && merged.get(k.id).beneCodes.length === 0);
+                    if (bs.length === 1 && ks.length >= 2) { ks.forEach(k => share(k, bs[0])); return; }
+                    if (bs.length === 2 && ks.length >= 2) {
+                        const bz = bs.find(b => /^文系型?$/.test(b.wk)), br = bs.find(b => /^理系型?$/.test(b.wk));
+                        if (!bz || !br) return;
+                        const rk = ks.filter(k => RIKEI.test(k.rawDept + k.method)), zk = ks.filter(k => !RIKEI.test(k.rawDept + k.method));
+                        if (!rk.length || !zk.length) return;
+                        rk.forEach(k => share(k, br)); zk.forEach(k => share(k, bz));
+                    }
+                });
+            }
+            beneOnly = beneOnly.filter(x => !(x._b && consumed.has(x._b)));
+
+            // (C) 配点・配分・傾斜だけが違う河合の行（山口「創成－機械系（配点１）」と「（配点２）」）は、ベネでは同じコード。
+            //     コードのない側に、同じ大学・学部・日程で学科名の基本が同じ行のコードを「共有」として付ける（国公立のみ）
+            {
+                const PT = /配点|配分|傾斜|ウエイト|ウェイト|パターン/;
+                const base = (k) => deptBase(k.rawDept).replace(/[a-z]?パタ[ー]?ン$/, '');   // 「Ａパターン」「Ｂパターン」は同じ学科（nameKey が長音を除くので「パタン」になる）
+                const byKey = new Map();
+                kList.forEach(k => { const key = `${k.key}|${k.rawFac}|${k.sched}`; if (!byKey.has(key)) byKey.set(key, []); byKey.get(key).push(k); });
+                kList.forEach(k => {
+                    const m = merged.get(k.id);
+                    if (m.beneCodes.length || (k.type !== '1' && k.type !== '2') || !PT.test(k.rawDept + k.method)) return;
+                    const src = (byKey.get(`${k.key}|${k.rawFac}|${k.sched}`) || [])
+                        .filter(s => s !== k && merged.get(s.id).beneCodes.length && PT.test(s.rawDept + s.method) && base(s) === base(k))
+                        .sort((a, b) => Number(a.codeKawai5) - Number(b.codeKawai5))[0];
+                    if (!src) return;
+                    merged.get(src.id).beneCodes.filter(e => !e.shared).forEach(e => m.beneCodes.push(Object.assign({}, e, { shared: true, est: undefined })));
+                    if (!m.univAlt) m.univAlt = merged.get(src.id).univAlt;
+                });
+            }
+        }
+        // 仕上げ: 看護学校・専門学校など、ベネが「学校名だけ」（学部も学科も空）の行は、学科名では照合できない。
+        //   その学校に河合1行・ベネ1行しか無いときだけ、取り違えようがないので結びつける（「推定」表示）
+        {
+            const kRowsByUniv = new Map(), bRowsByUniv = new Map();
+            merged.forEach(m => { if (!kRowsByUniv.has(m.univ)) kRowsByUniv.set(m.univ, []); kRowsByUniv.get(m.univ).push(m); });
+            beneOnly.forEach(x => { if (!bRowsByUniv.has(x.univ)) bRowsByUniv.set(x.univ, []); bRowsByUniv.get(x.univ).push(x); });
+            const absorbed = new Set();
+            bRowsByUniv.forEach((bs, u) => {
+                const ks = kRowsByUniv.get(u);
+                if (!ks || ks.length !== 1 || bs.length !== 1) return;
+                const m = ks[0], x = bs[0];
+                if (m.beneCodes.length || !x._b || x._b.mFac || x._b.mDept) return;
+                m.beneCodes.push(Object.assign({}, x.beneCodes[0], { est: true }));
+                if (!m.univAlt) m.univAlt = x.univAlt || '';
+                absorbed.add(x);
+            });
+            for (let i = beneOnly.length - 1; i >= 0; i--) if (absorbed.has(beneOnly[i])) beneOnly.splice(i, 1);
+        }
+        // 結びつきの確からしさを、方式名の中身と学科内の選択肢の数で判定し直す（国公立は従来のまま）
+        //   消去法: 同じ学科の中で、河合の行数とベネの数が同じで、方式名が対応しない組が1つだけ残るなら、その組は他に選びようがない
+        {
+            const gk = (m) => [m.univ, m.fac, m.dept, m.kyo ? 'K' : 'N'].join('|');
+            const grp = new Map();
+            merged.forEach(m => {
+                if (!m.kawaiCode || m.type === '1' || m.type === '2') return;
+                const g = grp.get(gk(m)) || { nk: 0, nb: 0, pairs: [] };
+                g.nk++; g.nb += m.beneCodes.length; grp.set(gk(m), g);
+                m.beneCodes.forEach(c => { if (!c.shared) g.pairs.push({ m, c, ev: methodEvidence(m.method, c.bx || c.bm) }); });   // ルールで読み替えた方式名があれば、その形で比べる
+            });
+            grp.forEach(g => {
+                const forced = g.nk === 1 && g.nb === 1;                                    // その学科に河合もベネも1行だけ
+                const weak = g.pairs.filter(p => p.ev === 'other');
+                const byElimination = weak.length === 1 && g.nk === g.nb && !g.pairs.some(p => p.ev === 'conflict');
+                g.pairs.forEach(({ m, c, ev }) => {
+                    c.check = false; c.why = '';
+                    if (c.ref) { c.est = false; return; }                                        // 昨年の河合×ベネ表と同じ組（名前も昨年と同じ）→ 確定
+                    if (c.ml) { if (ev === 'conflict' && c.est) { c.check = true; c.why = `方式名の数字・英字が食い違っています（河合「${m.method || '（なし）'}」／ベネ「${c.bm || '（なし）'}」）。別の方式の可能性があります`; } return; }   // 学習した点数での判定をそのまま使う
+                    if (ev === 'conflict') { c.est = true; c.check = true; c.why = `方式名の数字・英字が食い違っています（河合「${m.method || '（なし）'}」／ベネ「${c.bm || '（なし）'}」）。別の方式の可能性があります`; }
+                    else if (ev === 'same' || ev === 'abbr' || forced || byElimination) c.est = false;
+                    else { c.est = true; c.why = '方式名に手がかりがなく、この学科に候補が複数あるため、順番や似かたで選んだ対応です'; }
+                });
+            });
+        }
+        beneOnly.forEach(x => { delete x._b; });
+
+        unifiedData = [...merged.values(), ...beneOnly];
+        unifiedData.forEach(it => {
+            it.beneCodes.sort((a, b) => a.code.localeCompare(b.code));   // 複数あるときはコード順
+            it.sUniv = nz(it.univ + ' ' + it.univAlt);
+            it.sFac = nz(it.fac); it.sDept = nz(it.dept); it.sMethod = nz(it.method);
+        });
+        dataMap = {};
+        unifiedData.forEach(item => { dataMap[item.id] = item; });
+
+        // 共通テスト利用の有無が河合とベネで食い違って結ばれた組（本来は起きないはず。起きていたら知らせる）
+        diag.kyoMismatch = [];
+        merged.forEach(m => m.beneCodes.forEach(c => {
+            if (!!m.kyo !== !!c.bk) diag.kyoMismatch.push({ m, c });
+        }));
+        if (REF.loaded) console.info(`前年度表: ${refStat.rows}行 → 組を確定 ${refStat.pair}組 / 学科の対応 ${refStat.dept}学科 / ベネのみ ${refStat.bNone}・河合のみ ${refStat.kNone} / 名前が変わっていて使わなかった ${refStat.stale}`);
+        buildRuleDiagnostics(diag, kUnivs, bUnivs, findKawaiUniv);
+        document.getElementById("status-msg").style.display = "none";
+        filterData();
+    }
+
+    // コード表示用ヘルパー（旧バージョンで保存した項目にも対応）
+    const NO_CODE = '-----';
+    function kawaiCodeText(item) {
+        const c = item.kawaiCode || '';
+        return c && !c.startsWith('未設定') ? c : NO_CODE;   // 旧バージョンで保存した「未設定…」にも対応
+    }
+    const codeValClass = (text, kind) => 'code-val val-' + kind + (text === NO_CODE ? ' code-none' : '');
+    function kawaiRowHtml(item) {
+        const t = kawaiCodeText(item);
+        return `<div class="code-row"><span class="code-left"><span class="code-tag tag-kawai">河合</span></span><span class="${codeValClass(t, 'kawai')}">${esc(t)}</span></div>`;
+    }
+    function beneCodesOf(item) {
+        if (Array.isArray(item.beneCodes)) return item.beneCodes;
+        if (item.beneCodeDisplay && !item.beneCodeDisplay.startsWith('未設定')) return [{ code: item.beneCodeDisplay, label: '' }];
+        return [];
+    }
+    // 学部名が「同じ・含む・略称（先頭が同じで順番どおり）」なら true。違って見えるときだけ黄色で目立たせる
+    const cmpKey = (s) => nz(s).replace(/[\s\u3000／\/－\-ー・･()（）]/g, '');
+    function facCompatible(a, b) {
+        const x = cmpKey(a), y = cmpKey(b);
+        if (!x || !y || x === y) return true;
+        const [sh, lg] = x.length <= y.length ? [x, y] : [y, x];
+        if (lg.includes(sh)) return true;
+        return sh.length >= 2 && sh.charAt(0) === lg.charAt(0) && isSubsequence(sh, lg);
+    }
+    // 学科名が「同じ・先頭/語尾が一致・略称・前半が一致」なら true。どれにも当たらないときだけ黄色（略称の場合もあるので「要確認」）
+    function deptCompatible(kd, bd) {
+        const SUF = /(学類|学科|学域|学系|コース|専攻|課程)$/;
+        const noParen = (t) => nz(t).replace(/[（(【][^）)】]*[）)】]/g, '');
+        const seg = (t) => { const p = noParen(t).split(/[\/\-－／]/); return p[p.length - 1]; };
+        const b = cmpKey(seg(bd)).replace(SUF, ''), kl = cmpKey(seg(kd)).replace(SUF, ''), kf = cmpKey(kd).replace(SUF, '');
+        if (!b || !kl || b === kl) return true;
+        const [sh, lg] = b.length <= kl.length ? [b, kl] : [kl, b];
+        if (lg.startsWith(sh)) return true;                                                   // 先頭一致（切り詰め）
+        if (sh.length >= 2 && lg.endsWith(sh)) return true;                                   // 語尾一致（「学校－中学国語」⇔「学校／国語」）
+        if (sh.length >= 2 && lg.includes(sh) && sh.length / lg.length >= 0.4) return true;   // 含む（長さが近いとき）
+        if (b.length >= 2 && isSubsequence(b, kf) && (kf.charAt(0) === b.charAt(0) || kl.charAt(0) === b.charAt(0))) return true;   // 略称
+        if (kl.length >= 2 && isSubsequence(kl, b) && kl.charAt(0) === b.charAt(0)) return true;
+        const kFirst = cmpKey(noParen(kd).split(/[\/\-－／]/)[0]);                              // 「生物／一般プ」の前半など（河合の頭の共通部分は除く）
+        return noParen(bd).split(/[\/\-－／]/).map(x => cmpKey(x).replace(SUF, '')).filter(x => x.length >= 2 && x !== kFirst)
+            .some(x => kf.includes(x) || (isSubsequence(x, kf) && x.charAt(0) === kf.charAt(0)));
+    }
+    // 河合・ベネそれぞれの「コード＋学部/学科/方式」を縦に並べる（人が見て対応を確かめるため）
+    const KYO_BADGE = '<span class="kyo-badge" title="共通テスト利用">共</span>';
+    // hl=true のとき（検索結果のカード）、コード検索で入力された数字で始まるコードを黄色くする
+    const isCodeHit = (code, hl) => !!(hl && codeQuery && String(code).replace(/\D/g, '').startsWith(codeQuery));
+    function kawaiBlockHtml(item, hl) {
+        const kCode = kawaiCodeText(item), kHas = kCode !== NO_CODE;
+        return kHas ? `
+            <div class="src-block src-kawai">
+                <div class="src-head"><span class="code-tag tag-kawai">河合</span><span class="code-val val-kawai${isCodeHit(kCode, hl) ? ' code-hit' : ''}">${esc(kCode)}</span></div>
+                <div class="src-names"><span class="bold-fac">${esc(item.fac || '学部なし')}</span>${item.dept ? ` / <span class="normal-dept">${esc(item.dept)}</span>` : ''}${item.kyo ? ' ' + KYO_BADGE : ''}${item.method ? ` <span class="sub-card-badge">${esc(item.method)}</span>` : ''}</div>
+            </div>` : `
+            <div class="src-block src-kawai src-none">
+                <div class="src-head"><span class="code-tag tag-kawai">河合</span><span class="code-val code-none">${NO_CODE}</span><span class="src-note">河合に該当なし</span></div>
+            </div>`;
+    }
+    function beneBlockHtml(item, c, hl) {
+        const kHas = kawaiCodeText(item) !== NO_CODE;
+        const hasNames = c.bf !== undefined || c.bd !== undefined;
+        const warn = hasNames && kHas && !facCompatible(item.fac, c.bf);
+        const warnD = hasNames && kHas && c.bd && !deptCompatible(item.dept, c.bd);
+        const flagAttr = (why) => `data-why="${esc(why)}" title="${esc(why)}" onclick="event.stopPropagation(); showFlagWhy(this)"`;     // タップで理由を表示（スマホは title が見られないため）
+        const flag = c.shared ? `<span class="src-flag" ${flagAttr('河合の複数の行で、同じベネのコードを共有しています')}>共有</span>`
+                   : (c.check ? `<span class="src-flag flag-check" ${flagAttr(c.why || '方式名が食い違っています')}>要確認</span>`
+                   : (c.est ? `<span class="src-flag" ${flagAttr(c.why || '名前の似かたと件数から推定した対応です')}>推定</span>` : ''));
+        const fac = c.bf ? `<span class="bold-fac${warn ? ' name-diff' : ''}" ${warn ? 'title="河合の学部名と違って見えます"' : ''}>${esc(c.bf)}</span>` : '';
+        const dept = c.bd ? `${fac ? ' / ' : ''}<span class="normal-dept${warnD ? ' name-diff' : ''}" ${warnD ? 'title="河合の学科名と違って見えます（略称の場合もあります）"' : ''}>${esc(c.bd)}</span>` : '';
+        const isKyo = !!c.bk;                                        // ベネは日程の列が「共」なら共通テスト利用
+        let meth = c.bm || c.label;
+        if (isKyo) meth = meth.replace(/^共\s*/, '');                        // 先頭の「共」はバッジで示すので方式名からは外す
+        const names = hasNames ? `<div class="src-names">${fac}${dept}${isKyo ? ' ' + KYO_BADGE : ''}${meth ? ` <span class="sub-card-badge">${esc(meth)}</span>` : ''}</div>`
+                               : (meth ? `<div class="src-names"><span class="sub-card-badge">${esc(meth)}</span></div>` : '');
+        return `
+            <div class="src-block src-bene">
+                <div class="src-head"><span class="code-tag tag-bene">ベネ</span><span class="code-val val-bene${isCodeHit(c.code, hl) ? ' code-hit' : ''}">${esc(c.code)}</span>${flag}</div>
+                ${names}
+            </div>`;
+    }
+    function pairHtml(item, hl) {
+        const list = beneCodesOf(item);
+        const bBlocks = list.length === 0 ? `
+            <div class="src-block src-bene src-none">
+                <div class="src-head"><span class="code-tag tag-bene">ベネ</span><span class="code-val code-none">${NO_CODE}</span><span class="src-note">ベネに該当なし</span></div>
+            </div>` : list.map(c => beneBlockHtml(item, c, hl)).join('');
+        return kawaiBlockHtml(item, hl) + bBlocks;
+    }
+    function beneCodesHtml(item) {
+        const list = beneCodesOf(item);
+        if (list.length === 0) return `<div class="code-row"><span class="code-left"><span class="code-tag tag-bene">ベネ</span></span><span class="code-val val-bene code-none">${NO_CODE}</span></div>`;
+        const ks = schedKey(item.method);
+        // ラベルは「コードを見分けるのに必要なときだけ」表示
+        //  ・先頭の 前/後/中 は、河合の行の日程と同じなら省略（画面に「前期」と出ているため）
+        const cleanLabel = (l) => {
+            l = String(l || '').trim();
+            const m = l.match(/^(前|後|中)(\s+|$)/);
+            if (m && (!ks || ks === m[1])) l = l.slice(m[0].length);
+            return l.trim();
+        };
+        return list.map(c => {
+            // コードが1つなら、ラベルは出さない（河合の行と1対1で対応しているため、見分ける必要がない）
+            const label = list.length >= 2 ? cleanLabel(c.label) : '';
+            return `
+            <div class="code-row">
+                <span class="code-left"><span class="code-tag tag-bene">ベネ</span>${label ? `<span class="code-sub">${esc(label)}</span>` : ''}${c.shared ? '<span class="code-sub" title="河合の複数の行で同じベネのコードを共有しています">共有</span>' : (c.est ? '<span class="code-sub" title="名前の似かたと件数から推定した対応です">推定</span>' : '')}</span>
+                <span class="code-val val-bene">${esc(c.code)}</span>
+            </div>`;
+        }).join('');
+    }
+
+    // 背景色は国公立の日程（前期・中期・後期・独自日程）だけ。私大・短大などは色なし
+    function getBgClass(item) {
+        if (item.type !== '1' && item.type !== '2') return "";
+        const sc = item.sched !== undefined ? item.sched : schedKey(item.method);   // 旧バージョンの保存データは文字から推測
+        if (sc === '前') return "bg-zenki";
+        if (sc === '中') return "bg-chuki";
+        if (sc === '後') return "bg-koki";
+        if (sc === '独') return "bg-dokuji";
+        return "";
+    }
+
+    function getTypeBadgeHtml(schoolType) {
+        const type = String(schoolType).trim();
+        switch (type) {
+            case '1': return '<span class="type-badge type-kokuritsu">国</span>';
+            case '2': return '<span class="type-badge type-koritsu">公</span>';
+            case '3': return '<span class="type-badge type-shiritsu">私</span>';
+            case '4': case '5': return '<span class="type-badge type-other">短</span>';
+            case '6': return '<span class="type-badge type-other">校</span>';
+            default:  return '<span class="type-badge type-other">他</span>';
+        }
+    }
+
+    function saveAndFilter() {
+        const conditions = {
+            code: document.getElementById("s-code").value,
+            type: document.getElementById("s-type").value,
+            univ: document.getElementById("s-univ").value,
+            fac: document.getElementById("s-fac").value,
+            dept: document.getElementById("s-dept").value,
+            method: document.getElementById("s-method").value
+        };
+        try { localStorage.setItem("mix_search_conditions", JSON.stringify(conditions)); } catch (e) {}
+        filterData();
+    }
+
+    function loadSearchConditions() {
+        try {
+            const saved = localStorage.getItem("mix_search_conditions");
+            if (saved) {
+                const c = JSON.parse(saved);
+                if (c.code !== undefined) document.getElementById("s-code").value = c.code;
+                if (c.type !== undefined) document.getElementById("s-type").value = c.type;
+                if (c.univ !== undefined) document.getElementById("s-univ").value = c.univ;
+                if (c.fac !== undefined) document.getElementById("s-fac").value = c.fac;
+                if (c.dept !== undefined) document.getElementById("s-dept").value = c.dept;
+                if (c.method !== undefined) document.getElementById("s-method").value = c.method;
+            }
+        } catch (e) {}
+    }
+
+    // コード検索で入力された数字（カードで一致したコードを黄色くするために覚えておく）
+    let codeQuery = '';
+
+    function filterData() {
+        if (unifiedData.length === 0) return;
+
+        const codeRaw = document.getElementById("s-code").value.trim();
+        const qCode = nz(codeRaw).replace(/[^0-9]/g, '');       // 「3269-01-0103」でも「3269010103」でも同じ。全角数字もOK
+        codeQuery = qCode;
+        const qType = document.getElementById("s-type").value;
+        const qUniv = nz(document.getElementById("s-univ").value.trim());
+        const qFac = nz(document.getElementById("s-fac").value.trim());
+        const qDept = nz(document.getElementById("s-dept").value.trim());
+        const qMethod = nz(document.getElementById("s-method").value.trim());
+
+        const countBox = document.getElementById("match-count-box");
+        const container = document.getElementById("result-container");
+
+        if (!qType && !qUniv && !qFac && !qDept && !qMethod && !codeRaw) {
+            countBox.innerHTML = `<span>検索スタンバイ中</span><span class="highlight-count">統合データ全 ${unifiedData.length.toLocaleString()} 件</span>`;
+            container.innerHTML = `<div class="guide-msg">🔍 大学名などを入力して検索してください（例: 名古屋、名古屋工大）<br>コード番号（河合・ベネッセ）からも探せます</div>`;
+            return;
+        }
+        if (codeRaw && qCode.length < 3) {      // 1〜2桁だと大量にヒットして重くなるので、3桁以上から
+            countBox.innerHTML = `<span>コード番号</span><span class="highlight-count">3桁以上で検索</span>`;
+            container.innerHTML = `<div class="guide-msg">🔢 コード番号は3桁以上入力してください（例: 52385、3269-01-0103）</div>`;
+            return;
+        }
+
+        // コード検索: 河合の5桁コード、またはベネのコード（先頭から一致）。ハイフンの有無は問わない。
+        //   5桁ちょうどで河合のコードと一致するものがあれば、河合のそのコードだけを対象にする（ベネの先頭5桁との偶然の一致を除く）
+        const exactKawai = qCode.length === 5 && unifiedData.some(it => it.kawaiCode === qCode);
+        const codeMatch = (item) => {
+            if (!qCode) return true;
+            if (exactKawai) return item.kawaiCode === qCode;
+            if (item.kawaiCode && String(item.kawaiCode).startsWith(qCode)) return true;
+            return item.beneCodes.some(c => String(c.code).replace(/\D/g, '').startsWith(qCode));
+        };
+
+        const filtered = unifiedData.filter(item => {
+            if (qType && item.type !== qType) return false;
+            if (!codeMatch(item)) return false;
+            if (qUniv && !item.sUniv.includes(qUniv)) return false;
+            if (qFac && !item.sFac.includes(qFac)) return false;
+            if (qDept && !item.sDept.includes(qDept)) return false;
+            if (qMethod && !item.sMethod.includes(qMethod)) return false;
+            return true;
+        });
+
+        renderGroupedResults(filtered, qUniv);
+    }
+
+    function renderGroupedResults(list, qUniv) {
+        const container = document.getElementById("result-container");
+        const countBox = document.getElementById("match-count-box");
+
+        if (list.length === 0) {
+            countBox.innerHTML = `<span>該当件数</span><span class="highlight-count error">0 件</span>`;
+            container.innerHTML = `<div class="guide-msg error">一致するデータが見つかりませんでした</div>`;
+            return;
+        }
+
+        countBox.innerHTML = `<span>該当件数</span><span class="highlight-count">${list.length.toLocaleString()} 件</span>`;
+
+        const univGrouped = {};
+        list.forEach(item => {
+            if (!univGrouped[item.univ]) {
+                univGrouped[item.univ] = { items: [], type: item.type };
+            }
+            univGrouped[item.univ].items.push(item);
+        });
+
+        const univNames = Object.keys(univGrouped);
+        let html = '';
+        const isSingleUniv = (univNames.length === 1);
+
+        // 入力が大学名と100%一致する大学（「愛知」と入れて大学名が「愛知」）は、先頭に出して開いた状態にする。
+        //   「大学」の有無は区別しない。ベネ側の呼び名（名古屋工大 など）と一致する場合も同じ扱い。
+        const exactKey = (t) => nz(t || '').replace(/大学$/, '');
+        const qKey = exactKey(qUniv);
+        const exactSet = new Set();
+        if (qKey) {
+            univNames.forEach(name => {
+                if (exactKey(name) === qKey || univGrouped[name].items.some(it => it.univAlt && exactKey(it.univAlt) === qKey)) exactSet.add(name);
+            });
+            if (exactSet.size) univNames.sort((a, b) => (exactSet.has(b) ? 1 : 0) - (exactSet.has(a) ? 1 : 0));   // 一致したものを先頭へ（それ以外の順番は今まで通り）
+        }
+
+        univNames.forEach((univName, index) => {
+            const univData = univGrouped[univName];
+            const univItems = univData.items;
+            const schoolType = univData.type;
+            
+            //   大学名もコードも入れていない検索（学部名だけ等）のときだけ、先頭の大学を開いておく。コード検索で複数の大学に当たったときは開かない
+            let isOpen = exactSet.has(univName) || (qUniv && isSingleUniv) || (!qUniv && !codeQuery && index === 0) || isSingleUniv;
+
+            const facGrouped = {};
+            univItems.forEach(item => {
+                const displayFac = item.fac ? item.fac : '学部なし';
+                if (!facGrouped[displayFac]) facGrouped[displayFac] = [];
+                facGrouped[displayFac].push(item);
+            });
+
+            let facHtml = '';
+            Object.keys(facGrouped).forEach(facName => {
+                const facItems = facGrouped[facName];
+                facItems.sort((a, b) => a.dept.localeCompare(b.dept, 'ja'));
+
+                let cardsHtml = '';
+                facItems.forEach(item => {
+                    const bgClass = getBgClass(item);
+                    
+                    let mainStr = `<span class="bold-fac">${esc(item.fac || '学部なし')}</span>`;
+                    if (item.dept) {
+                        mainStr += ` / <span class="normal-dept">${esc(item.dept)}</span>`;
+                    }
+                    
+                    const badgeHtml = item.method ? `<div class="sub-card-meta"><span class="sub-card-badge">${esc(item.method)}</span></div>` : '';
+
+                    cardsHtml += `
+                        <div class="sub-card pair-card ${bgClass}">
+                            <div class="pair-side" data-save-id="${item.id}">${saveBtnInner(item)}</div>
+                            <div class="pair-main">${pairHtml(item, true)}</div>
+                        </div>
+                    `;
+                });
+
+                facHtml += `
+                    <div class="fac-section">
+                        <div class="fac-title">${esc(facName)}</div>
+                        <div class="fac-cards-wrapper">
+                            ${cardsHtml}
+                        </div>
+                    </div>
+                `;
+            });
+
+            const typeBadgeHtml = getTypeBadgeHtml(schoolType);
+
+            html += `
+                <div class="univ-group ${isOpen ? 'open' : ''}" id="univ-group-${index}">
+                    <div class="univ-header" onclick="toggleUnivGroup(${index})">
+                        <div class="univ-header-left">
+                            ${typeBadgeHtml}
+                            <span>${esc(univName)}</span>
+                            <span class="univ-count-badge">${univItems.length}件</span>
+                        </div>
+                        <div class="univ-arrow">▼</div>
+                    </div>
+                    <div class="univ-content">
+                        ${facHtml}
+                    </div>
+                </div>
+            `;
+        });
+
+        container.innerHTML = html;
+    }
+
+    function toggleUnivGroup(index) {
+        const targetGroup = document.getElementById(`univ-group-${index}`);
+        const isOpen = targetGroup.classList.contains('open');
+        // 閉じるとき: 見出しが上に張り付いている（中を読み進めている）なら、閉じたあとも見出しを見失わないように合わせる
+        const box = document.getElementById('result-container');
+        const wasStuck = isOpen && box && targetGroup.getBoundingClientRect().top < box.getBoundingClientRect().top - 1;
+        document.querySelectorAll('.univ-group').forEach(group => group.classList.remove('open'));
+        if (!isOpen) {
+            targetGroup.classList.add('open');
+            scrollGroupToTop(targetGroup);    // 前に開いていた大学が閉じて位置がずれても、開いた大学を見失わないようにする
+        } else if (wasStuck) {
+            scrollGroupToTop(targetGroup);
+        }
+    }
+    // 大学の見出しを、結果欄（スクロールする枠）の上端に合わせる。
+    //   ※ 画面全体ではなく「結果欄」がスクロールするので、結果欄の scrollTop を動かす
+    function scrollGroupToTop(el) {
+        const box = document.getElementById('result-container');
+        if (!box) return;
+        box.scrollTop += el.getBoundingClientRect().top - box.getBoundingClientRect().top;   // 開閉のあとの位置で計算する
+        // 結果欄そのものが固定ヘッダーの下に隠れているときは、画面全体も少しだけ動かして見えるようにする
+        const hd = document.querySelector('header');
+        const limit = (hd ? hd.offsetHeight : 44) + 4;
+        const top = box.getBoundingClientRect().top;
+        if (top < limit) window.scrollBy(0, top - limit);
+    }
+
+    // ---- 保存ボタンの状態 ----
+    //  保存リストの1件は「河合1＋ベネ1」（通常）。「推定」「要確認」の対応は、確認のうえ「河合のみ」「ベネのみ」の2件に分けて保存もできる（part='k' / 'b'）
+    //  河合1：ベネ1 …… 保存したら「保存済」で押せない。片方だけ残っているときは、残っている側の保存ボタン（ボタン下に「河合は保存済」などと注記）
+    //  河合1：ベネ複数 …… 押すたびに、表示順で次のベネを1つ採用。全部保存したら押せない
+    //  保存リストから消すと、その分が戻ってボタンが復活する
+    function saveState(item) {
+        const list = beneCodesOf(item);
+        const total = Math.max(1, list.length);
+        const mine = savedList.filter(e => (e.srcId || e.id) === item.id);
+        // 旧バージョンで「ベネ全部まとめて」保存したもの（ベネが2つ以上入っている）は、全部保存済みとして扱う
+        if (mine.some(e => !e.part && beneCodesOf(e).length > 1)) return { total, saved: total, remaining: [], note: '' };
+        const codeOf = (e) => (beneCodesOf(e)[0] || {}).code;
+        const kawaiExists = kawaiCodeText(item) !== NO_CODE;
+        const hasKSep = mine.some(e => e.part === 'k');                    // 河合だけ別に保存されている
+        const hasK = hasKSep || mine.some(e => !e.part);                   // 保存リストに河合が入っている
+        const pairCodes = new Set(mine.filter(e => !e.part).map(codeOf));
+        const bCodes = new Set(mine.filter(e => e.part === 'b').map(codeOf));
+        const remaining = [];
+        if (!list.length) { if (!mine.length) remaining.push({ c: null, needK: true, needB: false }); }
+        else list.forEach(c => {
+            const pairHas = pairCodes.has(c.code), bHas = bCodes.has(c.code);
+            const needK = kawaiExists && !hasK && !pairHas;
+            const needB = !pairHas && !bHas;
+            if (!needK && !needB) return;
+            if (!kawaiExists && !needB) return;
+            remaining.push({ c, needK: kawaiExists ? needK : false, needB });
+        });
+        // 注記: 河合・ベネの片方だけが別に保存されているとき
+        let note = '';
+        if (remaining.length === 1 && list.length) {
+            const r = remaining[0];
+            if (r.needK && !r.needB) note = 'ベネは保存済';
+            else if (!r.needK && r.needB && hasKSep) note = '河合は保存済';
+        }
+        return { total, saved: total - remaining.length, remaining, note };
+    }
+    function saveBtnInner(item) {
+        const st = saveState(item);
+        const full = st.remaining.length === 0;
+        let label;
+        if (full) label = '保存済';
+        else if (st.note === 'ベネは保存済') label = '河合を保存';
+        else if (st.note === '河合は保存済') label = 'ベネを保存';
+        else label = st.total >= 2 ? `保存 ${st.saved}/${st.total}` : '保存';
+        return `<button class="card-btn${full ? ' saved' : ''}" ${full ? 'disabled' : ''} onclick="event.stopPropagation(); addById('${item.id}')">${label}</button>` +
+               (st.note ? `<div class="side-note">${st.note}</div>` : '');
+    }
+    // 画面を描き直さず、保存ボタンだけ最新の状態にする（検索結果の開閉やスクロール位置を崩さないため）
+    function refreshSaveButtons() {
+        document.querySelectorAll('.pair-side[data-save-id]').forEach(el => {
+            const item = dataMap[el.getAttribute('data-save-id')];
+            if (item) el.innerHTML = saveBtnInner(item);
+        });
+    }
+
+    function addById(id) {
+        const item = dataMap[id];
+        if (!item) return;
+        const st = saveState(item);
+        if (st.remaining.length === 0) {
+            showToast("この項目はすでに保存済みです");
+            refreshSaveButtons();
+            return;
+        }
+        // ベネが2つ以上残っているときは、どれを保存するか自分で選ぶ。残りが1つ（1:1や、1:2の2回目）なら、それを自動で採用
+        if (st.remaining.length >= 2) { openPickModal(item, st.remaining); return; }
+        handleSlot(item, st.remaining[0]);
+    }
+    // 保存する1件の扱いを決める: 「推定」「要確認」で河合・ベネの両方を保存するときは、確認を挟む
+    function handleSlot(item, slot) {
+        const c = slot.c;
+        if (!c) { saveEntry(item, null); return; }
+        if (slot.needK && slot.needB) {
+            if (c.est || c.check) { openFlagModal(item, c); return; }
+            saveEntry(item, c); return;
+        }
+        if (!slot.needK && slot.needB) { saveEntry(item, c, savedList.some(e => (e.srcId || e.id) === item.id && e.part === 'k') ? 'b' : undefined); return; }
+        if (slot.needK && !slot.needB) { saveEntry(item, null, 'k'); return; }
+    }
+
+    // 保存リストに追加する。mode: 未指定=「河合1つ＋ベネ1つ」（pick が null ならベネなしの行） / 'k'=河合のみ / 'b'=ベネのみ
+    function saveEntry(item, pick, mode) {
+        if (savedList.length >= 50) {
+            showToast("保存リストは最大50件までです");
+            return false;
+        }
+        const st = saveState(item);
+        const entry = Object.assign({}, item, { srcId: item.id });
+        if (mode === 'k') { entry.part = 'k'; entry.id = item.id + '#k'; entry.beneCodes = []; }
+        else if (mode === 'b') { entry.part = 'b'; entry.id = item.id + '@' + pick.code + '#b'; entry.beneCodes = [pick]; }
+        else if (st.total >= 2 && pick) { entry.id = item.id + '@' + pick.code; entry.beneCodes = [pick]; }
+        savedList.push(entry);
+        saveListToStorage();
+        if (mode === 'k') showToast('河合のみ保存しました');
+        else if (mode === 'b') showToast(`ベネのみ保存しました（${pick.code}）`);
+        else showToast(st.total >= 2 && pick ? `保存しました（${st.saved + 1}/${st.total}・ベネ ${pick.code}）` : "リストに保存しました！");
+        renderSavedList();
+        return true;
+    }
+
+    // ---- 「推定」「要確認」の確認シート（このまま保存／別々に保存） ----
+    let flagCtx = null;
+    function openFlagModal(item, c) {
+        flagCtx = { id: item.id, code: c.code };
+        const kind = c.check ? '要確認' : '推定';
+        document.getElementById('flag-title').textContent = `この対応は「${kind}」です`;
+        document.getElementById('flag-warn').textContent = c.check
+            ? '方式名の数字・英字が食い違っていて、河合とベネの対応が正しいか分かりません。'
+            : '方式名の似かたから選んだ対応で、正しいかどうか確実ではありません。';
+        document.getElementById('flag-kawai').innerHTML = kawaiBlockHtml(item);
+        document.getElementById('flag-bene').innerHTML = beneBlockHtml(item, c);
+        document.getElementById('flag-modal').classList.add('show');
+    }
+    function closeFlagModal() { document.getElementById('flag-modal').classList.remove('show'); flagCtx = null; }
+    function flagChoose(how) {
+        const ctx = flagCtx; closeFlagModal();
+        if (!ctx) return;
+        const item = dataMap[ctx.id];
+        if (!item) return;
+        const slot = saveState(item).remaining.find(r => r.c && r.c.code === ctx.code);
+        if (!slot) { refreshSaveButtons(); return; }
+        if (how === 'pair') { saveEntry(item, slot.c); return; }
+        if (savedList.length + 2 > 50) { showToast('別々に保存するには、保存リストに2件の空きが必要です（最大50件）'); return; }
+        saveEntry(item, null, 'k');
+        saveEntry(item, slot.c, 'b');
+        showToast('河合とベネを別々に保存しました（2件）');
+    }
+
+    // ---- ベネを選ぶシート ----
+    function openPickModal(item, remaining) {
+        const st = saveState(item);
+        document.getElementById('pick-sub').textContent = `この河合には、ベネが ${st.total} 件あります（保存済 ${st.saved} 件）。保存するものをタップしてください。`;
+        document.getElementById('pick-kawai').innerHTML = kawaiBlockHtml(item);
+        document.getElementById('pick-list').innerHTML = remaining.map(r =>
+            `<button class="pick-opt" onclick="pickBene('${item.id}', '${esc(r.c.code)}')">${beneBlockHtml(item, r.c)}</button>`).join('');
+        document.getElementById('pick-modal').classList.add('show');
+    }
+    function closePickModal() {
+        document.getElementById('pick-modal').classList.remove('show');
+    }
+    function pickBene(id, code) {
+        const item = dataMap[id];
+        closePickModal();
+        if (!item) return;
+        const slot = saveState(item).remaining.find(r => r.c && r.c.code === code);
+        if (!slot) { refreshSaveButtons(); return; }       // すでに保存済みだった場合など
+        handleSlot(item, slot);
+    }
+
+    function moveSavedItem(index, dir) {
+        const targetIndex = index + dir;
+        if (targetIndex < 0 || targetIndex >= savedList.length) return;
+        const temp = savedList[index];
+        savedList[index] = savedList[targetIndex];
+        savedList[targetIndex] = temp;
+        saveListToStorage();
+        renderSavedList();
+    }
+
+    function confirmRemoveFromList(index) {
+        const confirmHtml = `
+            <div class="toast-confirm-box">
+                <div class="toast-confirm-title">削除しますか？</div>
+                <div class="toast-btn-group-vertical">
+                    <button class="danger" onclick="executeRemoveFromList(${index})">削除</button>
+                    <button class="secondary" onclick="hideToast()">キャンセル</button>
+                </div>
+            </div>
+        `;
+        showToast("", true, confirmHtml);
+    }
+
+    function executeRemoveFromList(index) {
+        savedList.splice(index, 1);
+        saveListToStorage();
+        renderSavedList();
+        hideToast();
+        showToast("リストから削除しました");
+    }
+
+    function confirmClearAll() {
+        if (savedList.length === 0) return;
+        const confirmHtml = `
+            <div class="toast-confirm-box">
+                <div class="toast-confirm-title">すべて削除しますか？</div>
+                <div class="toast-btn-group-vertical">
+                    <button class="danger" onclick="executeClearAll()">すべて削除</button>
+                    <button class="secondary" onclick="hideToast()">キャンセル</button>
+                </div>
+            </div>
+        `;
+        showToast("", true, confirmHtml);
+    }
+
+    function executeClearAll() {
+        savedList = [];
+        saveListToStorage();
+        renderSavedList();
+        closeClipModal();
+        hideToast();
+        showToast("リストをすべて削除しました");
+    }
+
+    function saveListToStorage() {
+        try { localStorage.setItem("mix_saved_list", JSON.stringify(savedList)); } catch (e) {}
+    }
+
+    function loadSavedListFromStorage() {
+        try {
+            const saved = localStorage.getItem("mix_saved_list");
+            if (saved) savedList = JSON.parse(saved);
+        } catch (e) { savedList = []; }
+        renderSavedList();
+    }
+
+    function renderSavedList() {
+        refreshSaveButtons();
+        const modalContainer = document.getElementById("modal-clip-container");
+        const footerLeftArea = document.getElementById("modal-footer-left-area");
+        document.getElementById("cart-count").innerText = `${savedList.length}`;
+
+        if (!modalContainer) return;
+
+        if (savedList.length === 0) {
+            footerLeftArea.innerHTML = '';
+            modalContainer.innerHTML = `<div class="guide-msg small">転記用リストに項目が追加されていません</div>`;
+            return;
+        } else {
+            footerLeftArea.innerHTML = `<button class="danger" onclick="confirmClearAll()">すべて削除</button>`;
+        }
+
+        let cardsHtml = '';
+        savedList.forEach((item, idx) => {
+            const bgClass = getBgClass(item);
+            const typeBadgeHtml = getTypeBadgeHtml(item.type);
+            
+            let mainStr = `${typeBadgeHtml}<strong>${esc(item.univ)}</strong> <span class="bold-fac">${esc(item.fac || '学部なし')}</span>`;
+            if (item.dept) mainStr += ` / <span class="normal-dept">${esc(item.dept)}</span>`;
+
+            const isFirst = idx === 0;
+            const isLast = idx === savedList.length - 1;
+
+            cardsHtml += `
+                <div class="sub-card pair-card ${bgClass}">
+                    <div class="pair-side"><button class="sub-delete card-btn" onclick="confirmRemoveFromList(${idx})">削除</button></div>
+                    <div class="pair-main">
+                        <div class="pair-univ">${typeBadgeHtml}<strong>${esc(item.univ)}</strong>${item.part === 'k' ? ' <span class="part-chip">河合のみ</span>' : (item.part === 'b' ? ' <span class="part-chip">ベネのみ</span>' : '')}</div>
+                        ${item.part === 'k' ? kawaiBlockHtml(item) : (item.part === 'b' ? beneCodesOf(item).map(c => beneBlockHtml(item, c)).join('') : pairHtml(item))}
+                    </div>
+                    <div class="order-btn-group">
+                        <button class="order-btn" onclick="moveSavedItem(${idx}, -1)" ${isFirst ? 'disabled' : ''}>▲</button>
+                        <button class="order-btn" onclick="moveSavedItem(${idx}, 1)" ${isLast ? 'disabled' : ''}>▼</button>
+                    </div>
+                </div>
+            `;
+        });
+        modalContainer.innerHTML = cardsHtml;
+    }
+
+    function openClipModal() {
+        if (savedList.length === 0) {
+            showToast("転記用リストに項目が追加されていません");
+            return;
+        }
+        document.getElementById("clip-modal").classList.add("show");
+        document.body.classList.add("modal-open");
+    }
+
+    function closeClipModal() {
+        document.getElementById("clip-modal").classList.remove("show");
+        document.body.classList.remove("modal-open");
+    }
+
+    function copyListAsText() {
+        if (savedList.length === 0) {
+            showToast("コピーする項目がありません");
+            return;
+        }
+
+        let textData = savedList.map((item, idx) => {
+            return `${idx + 1}. ${item.univ} | ${item.fac || ''} | ${item.dept || ''} | 河合(5):[${item.part === 'b' ? '別行' : (kawaiCodeText(item) === NO_CODE ? '-' : kawaiCodeText(item))}] ベネ(10):[${item.part === 'k' ? '別行' : (beneCodesOf(item).map(c => c.code).join(' / ') || '-')}]`;
+        }).join("\n");
+
+        navigator.clipboard.writeText(textData).then(() => {
+            showToast("統合リストをテキストでコピーしました！");
+        }).catch(err => {
+            showToast("コピーに失敗しました");
+        });
+    }
+
+
+    // =====================================================================
+    //  マッチング表のCSVダウンロード（パスワードつき）
+    //   ソースにはパスワードそのものではなく、塩(PW_SALT)つきSHA-256を一万回かけた値だけを書いています。
+    //   ※ブラウザの中だけの確認なので、「うっかり押される・気軽に配られる」ことを防ぐ程度のものです（強い保護ではありません）。
+    // =====================================================================
+    const PW_SALT = 'mix-code/2026/csv-export';
+    const PW_HASH = 'b5710556d21a6750df9843439c4453af947ab70079c5346013c0e58d0c61284e';
+    function sha256hex(str) {
+        const K = [0x428a2f98,0x71374491,0xb5c0fbcf,0xe9b5dba5,0x3956c25b,0x59f111f1,0x923f82a4,0xab1c5ed5,0xd807aa98,0x12835b01,0x243185be,0x550c7dc3,0x72be5d74,0x80deb1fe,0x9bdc06a7,0xc19bf174,0xe49b69c1,0xefbe4786,0x0fc19dc6,0x240ca1cc,0x2de92c6f,0x4a7484aa,0x5cb0a9dc,0x76f988da,0x983e5152,0xa831c66d,0xb00327c8,0xbf597fc7,0xc6e00bf3,0xd5a79147,0x06ca6351,0x14292967,0x27b70a85,0x2e1b2138,0x4d2c6dfc,0x53380d13,0x650a7354,0x766a0abb,0x81c2c92e,0x92722c85,0xa2bfe8a1,0xa81a664b,0xc24b8b70,0xc76c51a3,0xd192e819,0xd6990624,0xf40e3585,0x106aa070,0x19a4c116,0x1e376c08,0x2748774c,0x34b0bcb5,0x391c0cb3,0x4ed8aa4a,0x5b9cca4f,0x682e6ff3,0x748f82ee,0x78a5636f,0x84c87814,0x8cc70208,0x90befffa,0xa4506ceb,0xbef9a3f7,0xc67178f2];
+        const bytes = Array.from(new TextEncoder().encode(str));
+        const bitLen = bytes.length * 8;
+        bytes.push(0x80);
+        while (bytes.length % 64 !== 56) bytes.push(0);
+        const hi = Math.floor(bitLen / 0x100000000), lo = bitLen >>> 0;
+        [hi, lo].forEach(w => { bytes.push((w >>> 24) & 255, (w >>> 16) & 255, (w >>> 8) & 255, w & 255); });
+        const H = [0x6a09e667,0xbb67ae85,0x3c6ef372,0xa54ff53a,0x510e527f,0x9b05688c,0x1f83d9ab,0x5be0cd19];
+        const rotr = (x, n) => (x >>> n) | (x << (32 - n));
+        const w = new Array(64);
+        for (let off = 0; off < bytes.length; off += 64) {
+            for (let i = 0; i < 16; i++) w[i] = ((bytes[off + 4*i] << 24) | (bytes[off + 4*i + 1] << 16) | (bytes[off + 4*i + 2] << 8) | bytes[off + 4*i + 3]) >>> 0;
+            for (let i = 16; i < 64; i++) {
+                const s0 = rotr(w[i-15], 7) ^ rotr(w[i-15], 18) ^ (w[i-15] >>> 3), s1 = rotr(w[i-2], 17) ^ rotr(w[i-2], 19) ^ (w[i-2] >>> 10);
+                w[i] = (w[i-16] + s0 + w[i-7] + s1) >>> 0;
+            }
+            let [a, b, c, d, e, f, g, h] = H;
+            for (let i = 0; i < 64; i++) {
+                const S1 = rotr(e, 6) ^ rotr(e, 11) ^ rotr(e, 25), ch = (e & f) ^ (~e & g), t1 = (h + S1 + ch + K[i] + w[i]) >>> 0;
+                const S0 = rotr(a, 2) ^ rotr(a, 13) ^ rotr(a, 22), mj = (a & b) ^ (a & c) ^ (b & c), t2 = (S0 + mj) >>> 0;
+                h = g; g = f; f = e; e = (d + t1) >>> 0; d = c; c = b; b = a; a = (t1 + t2) >>> 0;
+            }
+            H[0] = (H[0] + a) >>> 0; H[1] = (H[1] + b) >>> 0; H[2] = (H[2] + c) >>> 0; H[3] = (H[3] + d) >>> 0;
+            H[4] = (H[4] + e) >>> 0; H[5] = (H[5] + f) >>> 0; H[6] = (H[6] + g) >>> 0; H[7] = (H[7] + h) >>> 0;
+        }
+        return H.map(x => x.toString(16).padStart(8, '0')).join('');
+    }
+    function pwDigest(pw) {
+        let h = sha256hex(PW_SALT + pw);
+        for (let i = 0; i < 9999; i++) h = sha256hex(h);
+        return h;
+    }
+    function openDlModal() {
+        document.getElementById('dl-pw').value = '';
+        document.getElementById('dl-err').textContent = '';
+        document.getElementById('dl-modal').classList.add('show');
+        setTimeout(() => { try { document.getElementById('dl-pw').focus(); } catch (e) {} }, 50);
+    }
+    function closeDlModal() { document.getElementById('dl-modal').classList.remove('show'); document.getElementById('dl-pw').value = ''; }
+    function doDownload() {
+        const pw = document.getElementById('dl-pw').value;
+        if (pwDigest(pw) !== PW_HASH) { document.getElementById('dl-err').textContent = 'パスワードが違います'; return; }
+        closeDlModal();
+        if (!unifiedData.length) { showToast('データがまだ読み込まれていません'); return; }
+        downloadMatchCsv();
+    }
+
+    // 昨年の「河合ベネ」表と同じ17列（共通サイト5列／ベネ6列／河合6列）・見出し2行。1行＝河合とベネの1組（相手がない行は片側だけ）
+    function buildMatchCsv(data) {
+        const q = (v) => { const t = String(v == null ? '' : v); return /[",\r\n]/.test(t) ? '"' + t.replace(/"/g, '""') + '"' : t; };
+        const lines = [];
+        lines.push(['共通サイト', '', '', '', '', 'データネット（駿台・ベネッセ）', '', '', '', '', '', '', '共通テストリサーチ（河合塾）', '', '', '', ''].map(q).join(','));
+        lines.push(['大学コード', '大学名称', '学部名称', '学科名称', '日程方式名称', '大学コード', '大学名', '学部名', '募集組織名', '日程', '方式名', '10桁大学コード', '大学コード', '大学コード表名', '学部コード表名', '募集区分コード表名', '日程方式名'].map(q).join(','));
+        const hasK = (it) => !!it.kawaiCode && !String(it.kawaiCode).startsWith('未設定');
+        const kRows = data.filter(hasK).sort((a, b) => String(a.kawaiCode).localeCompare(String(b.kawaiCode), 'en', { numeric: true }) || String(a.k10).localeCompare(String(b.k10)));
+        const bRows = data.filter(it => !hasK(it)).sort((a, b) => String((beneCodesOf(a)[0] || {}).code).localeCompare(String((beneCodesOf(b)[0] || {}).code)));
+        const beneCols = (c) => {
+            const code = String(c.code || '').replace(/\D/g, '');
+            const way = c.bw !== undefined ? c.bw : String(c.bm || '').replace(/^[^ ]*\s?/, '');
+            return [code, c.bu || '', c.bf || '', c.bd || '', c.bs || '', way];
+        };
+        kRows.forEach(it => {
+            const common = [it.kawaiCode, it.univ, it.fac, it.dept, it.method];
+            const kawai = [it.k10 || '', it.kawaiCode, it.univ, it.fac, it.dept, it.method];
+            const list = beneCodesOf(it);
+            if (!list.length) lines.push([...common, '', '', '', '', '', '', ...kawai].map(q).join(','));
+            else list.forEach(c => lines.push([...common, ...beneCols(c), ...kawai].map(q).join(',')));
+        });
+        bRows.forEach(it => beneCodesOf(it).forEach(c => {
+            const bc = beneCols(c);
+            lines.push(['', it.univ, it.fac, it.dept, bc[5] || it.method || '', ...bc, '', '', '', '', '', ''].map(q).join(','));
+        }));
+        return { text: '﻿' + lines.join('\r\n') + '\r\n', n: lines.length - 2 };
+    }
+    function downloadMatchCsv() {
+        const { text, n } = buildMatchCsv(unifiedData);
+        const d = new Date(), p2 = (x) => String(x).padStart(2, '0');
+        const name = `河合ベネ対応表_${d.getFullYear()}${p2(d.getMonth() + 1)}${p2(d.getDate())}.csv`;
+        const blob = new Blob([text], { type: 'text/csv;charset=utf-8' });
+        const a = document.createElement('a');
+        a.href = URL.createObjectURL(blob); a.download = name;
+        document.body.appendChild(a); a.click(); a.remove();
+        setTimeout(() => URL.revokeObjectURL(a.href), 4000);
+        showToast(`${n.toLocaleString()}行のCSVをダウンロードしました`);
+    }
+
+    function showToast(message, isConfirm = false, customHtml = "") {
+        const toast = document.getElementById("toast");
+        if (customHtml) toast.innerHTML = customHtml;
+        else toast.innerText = message;
+        toast.className = "show";
+        if (window.toastTimer) clearTimeout(window.toastTimer);
+        if (!isConfirm && !customHtml) {
+            window.toastTimer = setTimeout(() => { toast.className = ""; }, 2000);
+        }
+    }
+
+    // 「推定」「要確認」「共有」の印をタップしたとき、理由を少し長めに表示する
+    function showFlagWhy(el) {
+        showToast(el.getAttribute('data-why') || '');
+        if (window.toastTimer) clearTimeout(window.toastTimer);
+        window.toastTimer = setTimeout(() => { document.getElementById('toast').className = ''; }, 4500);
+    }
+
+    function hideToast() {
+        document.getElementById("toast").className = "";
+        if (window.toastTimer) clearTimeout(window.toastTimer);
+    }
+
+    function toggleSearchCollapse() {
+        const body = document.getElementById("search-body");
+        const icon = document.getElementById("search-toggle-icon");
+        const label = document.getElementById("search-status-label");
+        body.classList.toggle("collapsed");
+        if (body.classList.contains("collapsed")) {
+            icon.innerText = "▶"; label.innerText = "タップして展開";
+        } else {
+            icon.innerText = "▼"; label.innerText = "タップして折りたたむ";
+        }
+    }
+</script>
+
+</body>
+</html>
